@@ -14,8 +14,8 @@
   "rtl": false,
   "aliases": {
     "components": "@/presentation/components",
-    "utils": "@/presentation/lib/utils",
     "ui": "@/presentation/components/ui",
+    "utils": "@/presentation/lib/utils",
     "lib": "@/presentation/lib",
     "hooks": "@/presentation/hooks"
   },
