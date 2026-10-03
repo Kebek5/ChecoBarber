@@ -1,0 +1,42 @@
+---
+// src/presentation/layouts/BaseLayout.astro
+import '@/styles/global.css'
+import { container } from '@/infrastructure/container'
+import TopBar from '@/presentation/components/astro/TopBar.astro'
+import Sidebar from '@/presentation/components/astro/Sidebar.astro'
+import Footer from '@/presentation/components/astro/Footer.astro'
+import { Toaster } from '@/presentation/components/ui/sonner'
+
+interface Props { title?: string }
+const { title = 'Barbería' } = Astro.props
+
+
+let categories: Awaited<ReturnType<typeof container.getCategories.execute>> = []
+let categoriesError: string | null = null
+try {
+   categories = await container.getCategories.execute()
+} catch (e) {
+  categoriesError = (e as Error).message   // el Sidebar muestra ErrorState
+}
+---
+<!doctype html>
+<html lang="es">
+   <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>{title}</title>
+   </head>
+   <body>
+      <div class="app-shell">
+         <TopBar user={Astro.locals.user} />
+         <Sidebar
+         categories={categories}
+         error={categoriesError}
+         currentPath={Astro.url.pathname}
+         />
+         <main class="app-main"><slot /></main>
+         <Footer />
+      </div>
+      <Toaster client:load />
+   </body>
+</html>

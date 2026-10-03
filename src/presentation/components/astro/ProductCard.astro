@@ -1,0 +1,31 @@
+---
+import { Card, CardContent } from '@/presentation/components/ui/card'
+import { Badge } from '@/presentation/components/ui/badge'
+import { isInStock, type Product } from '@/domain/catalog'
+import { formatPrice } from '@/presentation/lib/format'
+
+interface Props { product: Product }
+const { product } = Astro.props
+const available = isInStock(product)
+---
+<a
+   href={`/producto/${product.id}`}
+   class="block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+>
+   <Card className="h-full overflow-hidden pt-0 transition-shadow hover:shadow-md">
+      <div
+         aria-hidden="true"
+         class="grid aspect-[4/3] place-items-center bg-muted text-4xl font-semibold text-muted-foreground"
+      >
+         {product.name.charAt(0).toUpperCase()}
+      </div>
+      <CardContent className="space-y-2">
+         <Badge variant="secondary">{product.category.name}</Badge>
+         <h3 class="font-medium leading-snug">{product.name}</h3>
+         <div class="flex items-center justify-between gap-2">
+         <span class="text-lg font-semibold">{formatPrice(product.price)}</span>
+         {!available && <Badge variant="destructive">Agotado</Badge>}
+         </div>
+      </CardContent>
+   </Card>
+</a>

@@ -1,0 +1,9 @@
+---
+import type { User } from '@/domain/auth'
+interface Props { user: User | null }
+const { user } = Astro.props
+---
+<header class="flex items-center justify-between border-b px-6 py-3">
+   <a href="/" class="font-semibold">Barbería</a>
+   {user ? <span>{user.name}</span> : <a href="/login" class="underline">Entrar</a>}
+</header>

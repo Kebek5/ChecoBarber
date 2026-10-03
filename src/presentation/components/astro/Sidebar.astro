@@ -1,0 +1,40 @@
+---
+import ErrorState from './ErrorState.astro'
+import type { Category } from '@/domain/catalog'
+
+interface Props {
+   categories: readonly Category[]
+   error?: string | null
+   currentPath: string
+}
+const { categories, error = null, currentPath } = Astro.props
+const path = currentPath.replace(/\/$/, '')   // tolera "/categoria/3/"
+---
+<aside aria-label="Categorías" class="space-y-3">
+   <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Categorías</h2>
+
+   {error ? (
+      <ErrorState message={error} retryHref={currentPath} />
+   ) : (
+      <ul class="space-y-1">
+         {categories.map((category) => {
+         const href = `/categoria/${category.id}`
+         const active = path === href
+         return (
+            <li>
+               <a
+               href={href}
+               aria-current={active ? 'page' : undefined}
+               class:list={[
+                  'block rounded-md px-3 py-2 text-sm transition-colors',
+                  active ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
+               ]}
+               >
+               {category.name}
+               </a>
+            </li>
+         )
+         })}
+      </ul>
+   )}
+</aside>

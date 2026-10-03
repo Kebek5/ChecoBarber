@@ -1,0 +1,10 @@
+---
+interface Props { message: string; retryHref?: string }
+const { message, retryHref } = Astro.props
+---
+<div role="alert" class="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm">
+   <p class="font-medium text-destructive">{message}</p>
+   {retryHref && (
+      <a href={retryHref} class="mt-2 inline-block underline underline-offset-4">Reintentar</a>
+   )}
+</div>

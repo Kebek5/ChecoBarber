@@ -1,5 +1,65 @@
 ---
-import { containsServerDirective } from "astro/runtime/server/render/server-islands.js";
+export const prerender = false   // necesario si tu output es 'static'
 
-export const prerender = false;
+import BaseLayout from '@/presentation/layouts/BaseLayout.astro'
+import ProductCard from '@/presentation/components/astro/ProductCard.astro'
+import ErrorState from '@/presentation/components/astro/ErrorState.astro'
+import { Input } from '@/presentation/components/ui/input'
+import { Button } from '@/presentation/components/ui/button'
+import { container } from '@/infrastructure/container'
+import { BackendUnavailableError } from '@/application/errors'
+import { matchesSearch, type CategoryCatalog } from '@/domain/catalog'
+
+const { id } = Astro.params
+const query = Astro.url.searchParams.get('q') ?? ''
+
+let catalog: CategoryCatalog | null = null
+let error: string | null = null
+let notFound = false
+
+try {
+   catalog = await container.getCategoryById.execute(id!)
+   if (!catalog) {
+      notFound = true
+      error = 'Esta categoría ya no existe.'
+      Astro.response.status = 404
+   }
+} catch (e) {
+   error = (e as Error).message
+   Astro.response.status = e instanceof BackendUnavailableError ? 503 : 500
+}
+
+const products = (catalog?.products ?? []).filter((p) => matchesSearch(p, query))
 ---
+<BaseLayout title={catalog ? `${catalog.name} · Barbería` : 'Categoría'}>
+   {error && (
+      <ErrorState message={error} retryHref={notFound ? undefined : Astro.url.pathname} />
+   )}
+
+   {catalog && (
+      <>
+         <header class="mb-6">
+         <h1 class="text-2xl font-semibold">{catalog.name}</h1>
+         <p class="text-muted-foreground">{catalog.description}</p>
+         </header>
+
+         <form method="get" role="search" class="mb-6 flex gap-2">
+         <label for="q" class="sr-only">Buscar en {catalog.name}</label>
+         <Input id="q" name="q" type="search" defaultValue={query} placeholder="Buscar producto…" />
+         <Button type="submit">Buscar</Button>
+         </form>
+
+         {products.length > 0 ? (
+         <ul class="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-4">
+            {products.map((product) => (
+               <li><ProductCard product={product} /></li>
+            ))}
+         </ul>
+         ) : (
+         <p class="text-muted-foreground">
+            {query ? `Sin resultados para “${query}”.` : 'Esta categoría aún no tiene productos.'}
+         </p>
+         )}
+      </>
+   )}
+</BaseLayout>
