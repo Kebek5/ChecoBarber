@@ -1,0 +1,30 @@
+---
+import type { Category } from '@/domain/catalog/Category'
+import { getCategories, getCategoryById } from '@/infrastructure/container'
+import Shop from '@/presentation/components/templates/Shop.astro'
+import BaseLayout from '@/presentation/layouts/BaseLayout.astro'
+
+const { id } = Astro.params
+
+let categories: Category[] = []
+let category: Category | null = null
+let error = ''
+
+try {
+  categories = await getCategories.execute()
+  category = await getCategoryById.execute(id ?? '')
+} catch (err) {
+  error = err instanceof Error ? err.message : 'Error de conexión.'
+}
+
+if (!error && !category) Astro.response.status = 404
+---
+
+<BaseLayout title={`${category?.name ?? 'Categoría'} | ChecoBarber`}>
+  <Shop
+    categories={categories}
+    products={category?.products ?? []}
+    activeCategoryId={id ?? null}
+    error={error}
+  />
+</BaseLayout>

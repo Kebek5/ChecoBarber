@@ -1,0 +1,62 @@
+---
+import { loginUser } from '@/infrastructure/container'
+import { safeRedirectPath, startSession } from '@/infrastructure/auth/session'
+import { buttonVariants } from '@/presentation/components/ui/button'
+import { Input } from '@/presentation/components/ui/input'
+import BaseLayout from '@/presentation/layouts/BaseLayout.astro'
+
+const next = safeRedirectPath(Astro.url.searchParams.get('next'))
+
+// Si ya hay sesión no tiene caso pedir credenciales otra vez
+if (Astro.locals.user) return Astro.redirect(next)
+
+let error = ''
+let email = ''
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData()
+  email = String(form.get('correo') ?? '')
+  const password = String(form.get('contrasena') ?? '')
+
+  try {
+    const user = await loginUser.execute({ email, password })
+    startSession(Astro.cookies, user)
+    return Astro.redirect(next)
+  } catch (err) {
+    error = err instanceof Error ? err.message : 'No se pudo iniciar sesión.'
+  }
+}
+---
+
+<BaseLayout title="Iniciar sesión | ChecoBarber">
+  <div class="mx-auto max-w-md p-5">
+    <h2 class="mb-4 text-base font-bold">Iniciar sesión</h2>
+
+    {error && (
+      <div class="mb-4 border border-destructive/40 bg-destructive/10 p-2.5 text-destructive">
+        <strong>Error:</strong> {error}
+      </div>
+    )}
+
+    <form method="post" class="flex flex-col gap-4">
+      <div class="flex flex-col gap-1">
+        <label for="correo" class="text-xs font-bold">Correo electrónico</label>
+        <Input id="correo" name="correo" type="email" required defaultValue={email} placeholder="correo@ejemplo.com" autoComplete="email" />
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="contrasena" class="text-xs font-bold">Contraseña</label>
+        <Input id="contrasena" name="contrasena" type="password" required autoComplete="current-password" />
+      </div>
+
+      <button type="submit" class={buttonVariants({ size: 'lg', className: 'mt-2' })}>
+        Entrar
+      </button>
+    </form>
+
+    <p class="mt-4 text-xs">
+      ¿No tienes cuenta?
+      <a href={`/registro?next=${encodeURIComponent(next)}`} class="font-bold underline">Regístrate</a>
+    </p>
+  </div>
+</BaseLayout>

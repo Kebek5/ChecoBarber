@@ -1,0 +1,40 @@
+---
+import type { Product } from '@/domain/catalog/Product'
+import AddToCartButton from '@/presentation/components/templates/AddToCartButton'
+import { buttonVariants } from '@/presentation/components/ui/button'
+
+interface Props {
+  product: Product
+}
+
+const { product } = Astro.props
+---
+
+<div class="flex w-[200px] flex-col justify-between border p-4">
+  <div>
+    {/* Contenedor de Imagen */}
+    <div class="relative mb-2.5 flex h-[140px] items-center justify-center bg-muted">
+      <span class="text-xs text-muted-foreground">🖼️ Sin Imagen</span>
+      {product.img && (
+        <img
+          src={product.img}
+          alt={product.name}
+          class="absolute inset-0 size-full bg-muted object-contain"
+          onerror="this.remove()"
+        />
+      )}
+    </div>
+    <h3 class="mt-2.5 mb-1 text-sm">{product.name}</h3>
+    <p class="mb-4 font-bold">${product.price.toFixed(2)}</p>
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <a href={`/producto/${product.id}`} class={buttonVariants({ variant: 'outline', size: 'lg' })}>
+      Ver Detalle
+    </a>
+    <AddToCartButton
+      client:load
+      product={{ id: product.id, name: product.name, price: product.price, img: product.img }}
+    />
+  </div>
+</div>

@@ -1,0 +1,8 @@
+---
+import CartView from '@/presentation/components/templates/CartView'
+import BaseLayout from '@/presentation/layouts/BaseLayout.astro'
+---
+
+<BaseLayout title="Carrito | ChecoBarber">
+  <CartView client:only="react" />
+</BaseLayout>

@@ -1,0 +1,48 @@
+---
+import type { Category } from '@/domain/catalog/Category'
+import type { Product } from '@/domain/catalog/Product'
+import Sidebar from '@/presentation/components/layout/Sidebar.astro'
+import ProductCard from '@/presentation/components/templates/ProductCard.astro'
+import { buttonVariants } from '@/presentation/components/ui/button'
+
+interface Props {
+  categories: Category[]
+  products: Product[]
+  activeCategoryId?: string | null
+  error?: string
+}
+
+const { categories, products, activeCategoryId = null, error = '' } = Astro.props
+const activeCategory = categories.find((category) => category.id === activeCategoryId)
+---
+
+{error ? (
+  <div class="p-10 text-center text-destructive">
+    <h3 class="font-bold">Error de conexión</h3>
+    <p>{error}</p>
+  </div>
+) : (
+  <div class="mx-auto flex max-w-6xl gap-5 p-5">
+    <Sidebar categories={categories} activeCategoryId={activeCategoryId} />
+
+    {/* Contenedor Principal del Catálogo */}
+    <div class="flex-1 p-5">
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-bold">
+          {activeCategory ? `Categoría: ${activeCategory.name}` : 'Todos los Productos'}
+        </h2>
+        <a href="/carrito" class={buttonVariants({ variant: 'default', size: 'lg' })}>
+          🛒 Ver Carrito
+        </a>
+      </div>
+
+      <div class="mt-5 flex flex-wrap gap-5">
+        {products.length > 0 ? (
+          products.map((product) => <ProductCard product={product} />)
+        ) : (
+          <p>No se encontraron productos disponibles en esta sección.</p>
+        )}
+      </div>
+    </div>
+  </div>
+)}

@@ -1,0 +1,25 @@
+---
+import type { Product } from '@/domain/catalog/Product'
+import { getProductById } from '@/infrastructure/container'
+import ProductDetail from '@/presentation/components/templates/ProductDetail.astro'
+import BaseLayout from '@/presentation/layouts/BaseLayout.astro'
+
+const { id } = Astro.params
+
+let product: Product | null = null
+let error = ''
+
+try {
+  product = await getProductById.execute(id ?? '')
+} catch (err) {
+  error = err instanceof Error ? err.message : 'Error de conexión.'
+}
+
+if (!error && !product) Astro.response.status = 404
+---
+
+<BaseLayout title={`${product?.name ?? 'Producto'} | ChecoBarber`}>
+  {error && <div class="p-10 text-destructive">Error: {error}</div>}
+  {!error && !product && <div class="p-10">No se encontró el producto.</div>}
+  {product && <ProductDetail product={product} />}
+</BaseLayout>

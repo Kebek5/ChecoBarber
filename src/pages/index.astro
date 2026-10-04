@@ -1,17 +1,26 @@
 ---
+import type { Category } from '@/domain/catalog/Category'
+import type { Product } from '@/domain/catalog/Product'
+import { getCategories, listProducts } from '@/infrastructure/container'
+import Shop from '@/presentation/components/templates/Shop.astro'
+import BaseLayout from '@/presentation/layouts/BaseLayout.astro'
 
+let categories: Category[] = []
+let products: Product[] = []
+let error = ''
+
+try {
+  const [categoriesData, productsData] = await Promise.all([
+    getCategories.execute(),
+    listProducts.execute(),
+  ])
+  categories = categoriesData
+  products = productsData
+} catch (err) {
+  error = err instanceof Error ? err.message : 'Error de conexión.'
+}
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout title="ChecoBarber | Tienda">
+  <Shop categories={categories} products={products} error={error} />
+</BaseLayout>
