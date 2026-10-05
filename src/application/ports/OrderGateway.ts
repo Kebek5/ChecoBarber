@@ -1,5 +1,5 @@
 import type { Order, OrderConfirmation } from '@/domain/order/Order'
 
 export interface OrderGateway {
-  place(order: Order): Promise<OrderConfirmation>
+  place(token: string, order: Order): Promise<OrderConfirmation>
 }

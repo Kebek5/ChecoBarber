@@ -1,17 +1,44 @@
 import { defineMiddleware } from 'astro:middleware'
-import { SESSION_COOKIE, readSessionToken } from '@/infrastructure/auth/session'
+import { BackendUnavailableError } from '@/application/errors'
+import { endSession, readSessionToken } from '@/infrastructure/auth/session'
+import { getCurrentUser } from '@/infrastructure/container'
+import type { User } from '@/domain/auth/User'
 
 // Páginas que requieren haber iniciado sesión
 const PROTECTED = ['/checkout']
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  context.locals.user = readSessionToken(context.cookies.get(SESSION_COOKIE)?.value)
+  const token = readSessionToken(context.cookies)
+  let user: User | null = null
+  let backendDown = false
 
-  const { pathname } = context.url
+  if (token) {
+    try {
+      user = await getCurrentUser.execute(token)
+      // null = token vencido o inválido: se limpia la cookie
+      if (!user) endSession(context.cookies)
+    } catch (err) {
+      // Backend caído: seguimos como anónimo pero NO borramos la cookie (el usuario no hizo nada mal)
+      if (!(err instanceof BackendUnavailableError)) throw err
+      backendDown = true
+    }
+  }
+
+  context.locals.user = user
+  context.locals.token = user ? token : null
+  context.locals.backendDown = backendDown
+
+  const { pathname, search } = context.url
   const isProtected = PROTECTED.some((path) => pathname === path || pathname.startsWith(`${path}/`))
 
-  if (isProtected && !context.locals.user) {
-    return context.redirect(`/login?next=${encodeURIComponent(pathname)}`)
+  if (isProtected && !user) {
+    if (backendDown) {
+      return new Response('El servidor no está disponible. Intenta de nuevo en un momento.', {
+        status: 503,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Retry-After': '30' },
+      })
+    }
+    return context.redirect(`/login?next=${encodeURIComponent(pathname + search)}`)
   }
 
   return next()

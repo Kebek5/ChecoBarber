@@ -1,9 +1,10 @@
 ---
+import { AppError } from '@/application/errors'
 import { loginUser } from '@/infrastructure/container'
 import { safeRedirectPath, startSession } from '@/infrastructure/auth/session'
 import { buttonVariants } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
-import BaseLayout from '@/presentation/layouts/BaseLayout.astro'
+import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
 
 const next = safeRedirectPath(Astro.url.searchParams.get('next'))
 
@@ -19,11 +20,12 @@ if (Astro.request.method === 'POST') {
   const password = String(form.get('contrasena') ?? '')
 
   try {
-    const user = await loginUser.execute({ email, password })
-    startSession(Astro.cookies, user)
+    const session = await loginUser.execute({ email, password })
+    startSession(Astro.cookies, session.token)
     return Astro.redirect(next)
   } catch (err) {
-    error = err instanceof Error ? err.message : 'No se pudo iniciar sesión.'
+    // Solo mostramos mensajes pensados para el usuario; el resto (red, bugs) va genérico
+    error = err instanceof AppError ? err.message : 'No se pudo iniciar sesión. Intenta de nuevo.'
   }
 }
 ---

@@ -7,3 +7,9 @@ export interface User {
   email: string
   role: Role
 }
+
+// Lo que devuelve el backend al iniciar sesión o registrarse
+export interface Session {
+  token: string
+  user: User
+}

@@ -3,7 +3,7 @@ import type { Category } from '@/domain/catalog/Category'
 import type { Product } from '@/domain/catalog/Product'
 import { getCategories, listProducts } from '@/infrastructure/container'
 import Shop from '@/presentation/components/templates/Shop.astro'
-import BaseLayout from '@/presentation/layouts/BaseLayout.astro'
+import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
 
 let categories: Category[] = []
 let products: Product[] = []

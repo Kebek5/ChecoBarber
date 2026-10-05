@@ -1,46 +1,20 @@
-import { createHmac, timingSafeEqual } from 'node:crypto'
 import type { AstroCookies } from 'astro'
-import type { User } from '@/domain/auth/User'
-import { config } from '@/infrastructure/config'
 
 export const SESSION_COOKIE = 'checobarber_session'
-export const SESSION_MAX_AGE = 60 * 60 * 24 * 7 // 7 días en segundos
 
-const sign = (data: string): string => {
-  if (!config.authSecret) throw new Error('Falta AUTH_SECRET en el archivo .env')
-  return createHmac('sha256', config.authSecret).update(data).digest('base64url')
+// El JWT del backend dura 2 h (auth.js → expiresIn: "2h"); la cookie no debe vivir más que él
+export const SESSION_MAX_AGE = 60 * 60 * 2
+
+// La cookie guarda el JWT que firmó el backend.
+export function readSessionToken(cookies: AstroCookies): string | null {
+  return cookies.get(SESSION_COOKIE)?.value || null
 }
 
-export function createSessionToken(user: User): string {
-  const payload = Buffer.from(
-    JSON.stringify({ user, exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE })
-  ).toString('base64url')
-  return `${payload}.${sign(payload)}`
-}
-
-export function readSessionToken(token: string | undefined): User | null {
-  if (!token) return null
-
-  const [payload, signature] = token.split('.')
-  if (!payload || !signature) return null
-
-  const expected = Buffer.from(sign(payload))
-  const received = Buffer.from(signature)
-  if (expected.length !== received.length || !timingSafeEqual(expected, received)) return null
-
-  try {
-    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf-8'))
-    if (data.exp < Math.floor(Date.now() / 1000)) return null
-    return data.user as User
-  } catch {
-    return null
-  }
-}
-
-export function startSession(cookies: AstroCookies, user: User): void {
-  cookies.set(SESSION_COOKIE, createSessionToken(user), {
+export function startSession(cookies: AstroCookies, token: string): void {
+  cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
+    // Con "secure" el navegador descarta la cookie si sirves el sitio en http (salvo localhost)
     secure: import.meta.env.PROD,
     path: '/',
     maxAge: SESSION_MAX_AGE,
