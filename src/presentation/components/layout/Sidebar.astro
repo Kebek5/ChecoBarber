@@ -9,21 +9,20 @@ interface Props {
 const { categories, activeCategoryId = null } = Astro.props
 
 const linkClass = (active: boolean) =>
-  `block w-full px-2.5 py-1.5 text-left text-xs hover:bg-muted ${active ? 'bg-muted font-bold' : ''}`
+  `block w-full rounded-lg px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#dcdcdc] ${active ? 'bg-[#dcdcdc]' : ''}`
 ---
 
-<aside class="aside w-52 shrink-0 border-r pr-4">
-  <h3 class="mb-3 text-sm font-bold">Categorías</h3>
-
-  <ul class="flex flex-col gap-1">
+<aside class="flex w-full shrink-0 flex-col items-start gap-5 px-5 py-7.5 md:w-57.5 md:min-w-65">
+  <h2 class="w-full text-xl font-bold tracking-[2px]">Categorías</h2>
+  <ul class="flex w-full flex-col">
     <li>
-      <a href="/" class={linkClass(activeCategoryId === null)}>Todas las categorías</a>
+      <a href="/#catalogo" class={linkClass(activeCategoryId === null)}>Todas las categorías</a>
     </li>
     {categories.map((category) => (
       <li>
         {/* Si ya está activa, al volver a darle clic se quita el filtro */}
         <a
-          href={activeCategoryId === category.id ? '/' : `/categoria/${category.id}`}
+          href={activeCategoryId === category.id ? '/#catalogo' : `/categoria/${category.id}#catalogo`}
           class={linkClass(activeCategoryId === category.id)}
         >
           {category.name}

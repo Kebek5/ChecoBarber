@@ -5,6 +5,10 @@ import { getCategories, listProducts } from '@/infrastructure/container'
 import Shop from '@/presentation/components/templates/Shop.astro'
 import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
 
+// Búsqueda del header: /?q=cera
+const search = (Astro.url.searchParams.get('q') ?? '').trim()
+const term = search.toLowerCase()
+
 let categories: Category[] = []
 let products: Product[] = []
 let error = ''
@@ -15,12 +19,22 @@ try {
     listProducts.execute(),
   ])
   categories = categoriesData
-  products = productsData
+  
+  if (term) {
+    products = productsData.filter((product) => 
+      product.name.toLowerCase().includes(term) || (product.description && product.description.toLowerCase().includes(term)))
+  
+  } else {
+    products = productsData
+  }
+
 } catch (err) {
   error = err instanceof Error ? err.message : 'Error de conexión.'
 }
 ---
 
 <BaseLayout title="ChecoBarber | Tienda">
-  <Shop categories={categories} products={products} error={error} />
+  <div id="products">
+    <Shop categories={categories} products={products} search={search} error={error} />
+  </div>
 </BaseLayout>

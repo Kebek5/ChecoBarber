@@ -1,3 +1,68 @@
-<footer class="border-t p-5 text-center text-xs text-muted-foreground">
-  © {new Date().getFullYear()} ChecoBarber
+---
+import { FacebookLogo, GithubLogo, InstagramLogo, LinkedinLogo } from '@phosphor-icons/react/dist/ssr'
+import { Separator } from '@/presentation/components/ui/separator'
+
+const user = Astro.locals.user
+
+const socials = [
+  { label: 'Instagram', href: '#', Icon: InstagramLogo },
+  { label: 'Facebook', href: '#', Icon: FacebookLogo },
+  { label: 'LinkedIn', href: '#', Icon: LinkedinLogo },
+  { label: 'GitHub', href: '#', Icon: GithubLogo },
+]
+
+const sitemap = [
+  { label: 'Tienda', href: '/' },
+  { label: 'Carrito', href: '/carrito' },
+  ...(user
+    ? []
+    : [
+        { label: 'Iniciar sesión', href: '/login' },
+        { label: 'Registrarse', href: '/registro' },
+      ]),
+]
+---
+
+<footer id="contacto" class="w-full bg-footer px-6 py-12 text-footer-foreground md:px-12">
+  <div class="mx-auto grid max-w-[1600px] gap-10 md:grid-cols-[2fr_3fr] md:items-start">
+    <section class="flex flex-col items-start justify-center gap-2">
+      <img src="/logo.png" alt="ChecoBarber" class="mb-2 w-18 object-contain" />
+      <div class="flex items-center gap-2">
+        {socials.map(({ label, href, Icon }) => (
+          <a
+            href={href}
+            aria-label={label}
+            class="flex size-8 items-center justify-center rounded-md border border-footer-foreground p-1.5 transition-opacity hover:opacity-60"
+          >
+            <Icon size={20} />
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <section class="grid grid-cols-2 gap-8">
+      <div class="flex flex-col items-start gap-2">
+        <h3 class="mb-3 text-xl font-bold">Contacto</h3>
+        <a href="tel:+523337296008" class="transition-opacity hover:opacity-60">+52 333 729 6008</a>
+        <a href="mailto:a23300700@ceti.mx" class="transition-opacity hover:opacity-60">a23300700@ceti.mx</a>
+        <span class="max-w-55 text-pretty">Checo Barber. Haircuts &amp; Shaves. Est. 2025</span>
+      </div>
+
+      <div class="flex flex-col items-start">
+        <h3 class="mb-3 text-xl font-bold">Mapa del sitio</h3>
+        <ul class="flex flex-col gap-2">
+          {sitemap.map((item) => (
+            <li>
+              <a href={item.href} class="transition-opacity hover:opacity-60">{item.label}</a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <Separator className="mx-auto mt-10 max-w-[1600px] bg-footer-foreground/20" />
+  <p class="mt-5 text-center text-xs text-footer-foreground/70">
+    © {new Date().getFullYear()} ChecoBarber
+  </p>
 </footer>

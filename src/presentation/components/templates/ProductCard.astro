@@ -1,7 +1,9 @@
 ---
 import type { Product } from '@/domain/catalog/Product'
 import AddToCartButton from '@/presentation/components/templates/AddToCartButton'
+import { Badge } from '@/presentation/components/ui/badge'
 import { buttonVariants } from '@/presentation/components/ui/button'
+import { Card } from '@/presentation/components/ui/card'
 
 interface Props {
   product: Product
@@ -10,31 +12,35 @@ interface Props {
 const { product } = Astro.props
 ---
 
-<div class="flex w-[200px] flex-col justify-between border p-4">
-  <div>
-    {/* Contenedor de Imagen */}
-    <div class="relative mb-2.5 flex h-[140px] items-center justify-center bg-muted">
-      <span class="text-xs text-muted-foreground">🖼️ Sin Imagen</span>
-      {product.img && (
-        <img
-          src={product.img}
-          alt={product.name}
-          class="absolute inset-0 size-full bg-muted object-contain"
-          onerror="this.remove()"
-        />
-      )}
-    </div>
-    <h3 class="mt-2.5 mb-1 text-sm">{product.name}</h3>
-    <p class="mb-4 font-bold">${product.price.toFixed(2)}</p>
+<Card className="min-h-95 gap-0 overflow-hidden p-0 shadow-[0_0_20px_#3333] transition-transform duration-200 hover:-translate-y-1">
+  <a href={`/producto/${product.id}`} class="relative flex h-45 w-full items-center justify-center bg-[#f8f8f8]">
+    <span class="text-[13px] text-muted-foreground">🖼️ Sin imagen</span>
+    {product.img && (
+      <img
+        src={product.img}
+        alt={product.name}
+        class="absolute inset-0 size-full bg-[#f8f8f8] object-contain"
+        onerror="this.remove()"
+      />
+    )}
+  </a>
+
+  <div class="flex flex-1 flex-col gap-2.5 p-3.75">
+    <h3 class="text-lg font-bold">{product.name}</h3>
+    <p class="line-clamp-3 text-sm text-muted-foreground">{product.description}</p>
+    {product.category && (
+      <div class="mt-auto flex flex-wrap gap-1.5">
+        <Badge variant="outline">{product.category.name}</Badge>
+      </div>
+    )}
   </div>
 
-  <div class="flex flex-col gap-1.5">
-    <a href={`/producto/${product.id}`} class={buttonVariants({ variant: 'outline', size: 'lg' })}>
-      Ver Detalle
-    </a>
+  <div class="flex flex-wrap items-center gap-2 p-3.75 pt-0">
+    <span class="mr-auto text-base font-bold">${product.price.toFixed(2)}</span>
     <AddToCartButton
       client:load
       product={{ id: product.id, name: product.name, price: product.price, img: product.img }}
     />
+    <a href={`/producto/${product.id}`} class={buttonVariants({ variant: 'outline' })}>Ver detalle</a>
   </div>
-</div>
+</Card>

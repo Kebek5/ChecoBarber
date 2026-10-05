@@ -6,5 +6,5 @@ const user = Astro.locals.user
 ---
 
 <BaseLayout title="Checkout | ChecoBarber">
-  <Checkout client:only="react" userName={user?.name ?? ''} />
+  <Checkout client:only="react" userName={user?.name ?? ''} userEmail={user?.email ?? ''} userTel={user?.tel ?? ''} />
 </BaseLayout>

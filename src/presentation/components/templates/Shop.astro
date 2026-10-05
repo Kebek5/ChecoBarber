@@ -1,19 +1,27 @@
 ---
 import type { Category } from '@/domain/catalog/Category'
 import type { Product } from '@/domain/catalog/Product'
+import Hero from '@/presentation/components/layout/Hero.astro'
 import Sidebar from '@/presentation/components/layout/Sidebar.astro'
+import MiniCart from '@/presentation/components/templates/MiniCart'
 import ProductCard from '@/presentation/components/templates/ProductCard.astro'
-import { buttonVariants } from '@/presentation/components/ui/button'
 
 interface Props {
   categories: Category[]
   products: Product[]
   activeCategoryId?: string | null
+  search?: string
   error?: string
 }
 
-const { categories, products, activeCategoryId = null, error = '' } = Astro.props
+const { categories, products, activeCategoryId = null, search = '', error = '' } = Astro.props
 const activeCategory = categories.find((category) => category.id === activeCategoryId)
+
+const title = search
+  ? `Resultados para “${search}”`
+  : activeCategory
+    ? activeCategory.name
+    : 'Todos los productos'
 ---
 
 {error ? (
@@ -22,27 +30,31 @@ const activeCategory = categories.find((category) => category.id === activeCateg
     <p>{error}</p>
   </div>
 ) : (
-  <div class="mx-auto flex max-w-6xl gap-5 p-5">
-    <Sidebar categories={categories} activeCategoryId={activeCategoryId} />
+  <>
+    <Hero />
 
-    {/* Contenedor Principal del Catálogo */}
-    <div class="flex-1 p-5">
-      <div class="flex items-center justify-between">
-        <h2 class="text-base font-bold">
-          {activeCategory ? `Categoría: ${activeCategory.name}` : 'Todos los Productos'}
-        </h2>
-        <a href="/carrito" class={buttonVariants({ variant: 'default', size: 'lg' })}>
-          🛒 Ver Carrito
-        </a>
-      </div>
+    <div id="catalogo" class="mx-auto flex w-full max-w-[1600px] scroll-mt-28 flex-col items-start md:flex-row">
+      <Sidebar categories={categories} activeCategoryId={activeCategoryId} />
 
-      <div class="mt-5 flex flex-wrap gap-5">
-        {products.length > 0 ? (
-          products.map((product) => <ProductCard product={product} />)
-        ) : (
-          <p>No se encontraron productos disponibles en esta sección.</p>
-        )}
+      <section class="w-full min-w-0 flex-1 p-7.5">
+        <div class="mb-6 flex items-center justify-between gap-5">
+          <h2 class="text-2xl font-bold">{title}</h2>
+        </div>
+
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-6">
+          {products.length > 0 ? (
+            products.map((product) => <ProductCard product={product} />)
+          ) : (
+            <p class="col-span-full p-10 text-center text-muted-foreground">
+              No se encontraron productos disponibles en esta sección.
+            </p>
+          )}
+        </div>
+      </section>
+
+      <div class="hidden self-stretch xl:block">
+        <MiniCart client:only="react" />
       </div>
     </div>
-  </div>
+  </>
 )}
