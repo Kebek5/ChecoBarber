@@ -17,14 +17,16 @@ let email = ''
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData()
+
   name = String(form.get('nombre') ?? '')
   tel = String(form.get('telefono') ?? '')
   email = String(form.get('correo') ?? '')
+
   const password = String(form.get('contrasena') ?? '')
   const confirm = String(form.get('confirmar') ?? '')
 
   try {
-    if (password !== confirm) throw new Error('Las contraseñas no coinciden.')
+    if (password !== confirm) throw new AppError('Las contraseñas no coinciden.')
 
     const session = await registerUser.execute({ name, tel, email, password })
     startSession(Astro.cookies, session.token)
@@ -54,7 +56,10 @@ if (Astro.request.method === 'POST') {
 
       <div class="flex flex-col gap-1">
         <label for="telefono" class="text-xs font-bold">Teléfono (10 dígitos)</label>
-        <Input id="telefono" name="telefono" type="tel" inputMode="numeric" required maxLength={10} defaultValue={tel} placeholder="3312345678" autoComplete="tel" />
+        <Input 
+          client:load id="telefono" name="telefono" type="text" inputMode="numeric" 
+          required maxLength={10} defaultValue={tel} placeholder="3312345678" autoComplete="tel" 
+          />
       </div>
 
       <div class="flex flex-col gap-1">
@@ -83,3 +88,15 @@ if (Astro.request.method === 'POST') {
     </p>
   </div>
 </BaseLayout>
+
+<script>
+  const inputEl = document.getElementById('telefono') as HTMLInputElement;
+
+  if (inputEl) {
+    inputEl.addEventListener('input', (e) => {
+      const target = e.target as HTMLInputElement;
+      // Borra cualquier carácter no numérico instantáneamente al escribir o pegar
+      target.value = target.value.replace(/[^0-9]/g, '');
+    });
+  }
+</script>

@@ -2,9 +2,9 @@
 import type { Category } from '@/domain/catalog/Category'
 import type { Product } from '@/domain/catalog/Product'
 import Hero from '@/presentation/components/layout/Hero.astro'
-import Sidebar from '@/presentation/components/layout/Sidebar.astro'
-import MiniCart from '@/presentation/components/templates/MiniCart'
-import ProductCard from '@/presentation/components/templates/ProductCard.astro'
+import CategorySidebar from '../shared/CategorySidebar.astro'
+import MiniCart from '@/presentation/components/customer/MiniCart'
+import ProductCard from '../shared/ProductCard.astro'
 
 interface Props {
   categories: Category[]
@@ -34,7 +34,7 @@ const title = search
     <Hero />
 
     <div id="catalogo" class="mx-auto flex w-full max-w-[1600px] scroll-mt-28 flex-col items-start md:flex-row">
-      <Sidebar categories={categories} activeCategoryId={activeCategoryId} />
+      <CategorySidebar categories={categories} activeCategoryId={activeCategoryId} />
 
       <section class="w-full min-w-0 flex-1 p-7.5">
         <div class="mb-6 flex items-center justify-between gap-5">

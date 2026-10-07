@@ -1,0 +1,38 @@
+---
+import type { Category } from '@/domain/catalog/Category'
+import type { Product } from '@/domain/catalog/Product'
+import { getCategories, listProducts } from '@/infrastructure/container'
+import Board from '@/presentation/components/admin/Board.astro'
+import AdminLayout from '@/presentation/components/layout/AdminLayout.astro'
+
+// // Búsqueda del header: /?q=cera
+const search = (Astro.url.searchParams.get('q') ?? '').trim()
+const term = search.toLowerCase()
+
+let categories: Category[] = []
+let products: Product[] = []
+let error = ''
+
+try {
+   const [categoriesData, productsData] = await Promise.all([
+      getCategories.execute(),
+      listProducts.execute(),
+   ])
+   categories = categoriesData
+   
+   if (term) {
+      products = productsData.filter((product) => 
+         product.name.toLowerCase().includes(term) || (product.description && product.description.toLowerCase().includes(term)))
+   
+   } else {
+      products = productsData
+   }
+
+   } catch (err) {
+   error = err instanceof Error ? err.message : 'Error de conexión.'
+   }
+---
+
+<AdminLayout title="ChecoBarber | Tienda">
+   <Board categories={categories} products={products} search={search} error={error}/>
+</AdminLayout>
