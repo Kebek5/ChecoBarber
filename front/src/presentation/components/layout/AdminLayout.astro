@@ -2,12 +2,13 @@
 import '@/styles/global.css'
 import Footer from '@/presentation/components/layout/Footer.astro'
 import TopBarAdmin from './TopBarAdmin.astro'
+import AdminNav from './AdminNav.astro'
 
 interface Props {
    title?: string
 }
 
-const { title = 'ChecoBarber' } = Astro.props
+const { title = 'Administración | ChecoBarber' } = Astro.props
 ---
 
 <!doctype html>
@@ -22,9 +23,18 @@ const { title = 'ChecoBarber' } = Astro.props
    </head>
    <body class="flex min-h-screen flex-col">
       <TopBarAdmin />
+      <AdminNav />
       <main class="flex-1">
          <slot />
       </main>
       <Footer />
    </body>
 </html>
+
+<script>
+   document.addEventListener('submit', (event) => {
+      const form = event.target as HTMLFormElement
+      const message = form.dataset.confirm
+      if (message && !window.confirm(message)) event.preventDefault()
+   })
+</script>

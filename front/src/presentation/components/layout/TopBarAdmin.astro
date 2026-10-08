@@ -99,3 +99,33 @@ const q = Astro.url.searchParams.get('q') ?? ''
 
    document.addEventListener('astro:page-load', initSearch);
 </script>
+
+<!-- ---
+import { SignOutIcon, StorefrontIcon } from '@phosphor-icons/react/dist/ssr'
+import { buttonVariants } from '@/presentation/components/ui/button'
+
+const user = Astro.locals.user
+---
+
+<header class="sticky top-0 z-50 flex min-h-22.5 flex-wrap items-center gap-x-6 gap-y-3 border-b bg-background px-4 py-3 md:px-8">
+   <a href="/dashboard" class="flex h-16 shrink-0 items-center gap-3">
+      <img src="/logo.png" alt="ChecoBarber" class="h-full w-25 object-contain object-center" />
+      <span class="hidden text-xs font-bold uppercase tracking-wide text-muted-foreground sm:inline">Administración</span>
+   </a>
+
+   <nav class="ml-auto flex items-center gap-3">
+      <a href="/" class={buttonVariants({ variant: 'ghost', size: 'lg' })}>
+         <StorefrontIcon />
+         <span class="hidden sm:inline">Ver tienda</span>
+      </a>
+
+      {user && <span class="hidden text-sm lg:inline">Hola, {user.name}</span>}
+
+      <form method="post" action="/salir">
+         <button type="submit" class={buttonVariants({ variant: 'outline', size: 'lg' })}>
+         <SignOutIcon />
+         <span class="hidden sm:inline">Cerrar sesión</span>
+         </button>
+      </form>
+   </nav>
+</header> -->
