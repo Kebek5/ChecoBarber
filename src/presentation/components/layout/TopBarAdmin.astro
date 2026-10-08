@@ -1,0 +1,101 @@
+---
+import { MagnifyingGlassIcon, ShoppingCartIcon, SignOutIcon } from '@phosphor-icons/react/dist/ssr'
+import { buttonVariants } from '@/presentation/components/ui/button'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/presentation/components/ui/input-group'
+import { ClientRouter } from 'astro:transitions' // 1. Importamos el enrutador de Astro
+
+const user = Astro.locals.user
+const q = Astro.url.searchParams.get('q') ?? ''
+---
+
+<ClientRouter />
+
+<header class="sticky top-0 z-50 flex min-h-22.5 flex-wrap items-center gap-x-6 gap-y-3 border-b bg-background px-4 py-3 md:px-8">
+   <a href="/dashboard" class="h-16 w-25 shrink-0">
+      <img src="/logo.png" alt="ChecoBarber" class="size-full object-contain object-center" />
+   </a>
+
+   <!-- 3. Le agregamos un ID al formulario y quitamos el botón de submit manual -->
+   <form id="search-form" action="/dashboard" method="get" role="search" class="order-last w-full sm:order-0 sm:w-auto sm:max-w-150 sm:flex-1">
+      <InputGroup className="h-10 rounded-full">
+         <InputGroupAddon>
+         <MagnifyingGlassIcon />
+         </InputGroupAddon>
+         <!-- 4. Agregamos data-astro-reload para evitar comportamientos extraños y un ID -->
+         <InputGroupInput 
+         id="search-input"
+         name="q" 
+         type="search" 
+         defaultValue={q} 
+         placeholder="Busca cera, cortes..." 
+         aria-label="Buscar productos"
+         autoComplete="off"
+         />
+      </InputGroup>
+   </form>
+
+   <nav class="ml-auto flex items-center gap-3">
+
+      {user ? (
+         <>
+         <span class="hidden text-sm lg:inline">Hola, {user.name}</span>
+         <form method="post" action="/salir">
+            <button type="submit" class={buttonVariants({ variant: 'outline', size: 'lg' })}>
+               <SignOutIcon />
+               <span class="hidden sm:inline">Cerrar sesión</span>
+            </button>
+         </form>
+         </>
+      ) : (
+         <>
+         <a href="/login" class={buttonVariants({ variant: 'ghost', size: 'lg' })}>Iniciar sesión</a>
+         <a href="/registro" class={buttonVariants({ variant: 'default', size: 'lg' })}>Registrarse</a>
+         </>
+      )}
+   </nav>
+</header>
+
+<script>
+   import { navigate } from 'astro:transitions/client';
+
+   function initSearch() {
+      const input = document.getElementById('search-input') as HTMLInputElement;
+
+      if (!input) return;
+
+      // Evitar registrar el evento más de una vez
+      if (input.dataset.searchInitialized === 'true') return;
+      input.dataset.searchInitialized = 'true';
+
+      let debounceTimer: ReturnType<typeof setTimeout>;
+
+      // Mantener el foco y el cursor al final después de la navegación
+      if (input.value) {
+         input.focus();
+         input.setSelectionRange(input.value.length, input.value.length);
+      }
+
+      input.addEventListener('input', (event) => {
+         const target = event.target as HTMLInputElement;
+
+         clearTimeout(debounceTimer);
+
+         debounceTimer = setTimeout(() => {
+         const value = target.value.trim();
+         const url = new URL(window.location.href);
+
+         if (value === '') {
+            url.searchParams.delete('q');
+         } else {
+            url.searchParams.set('q', value);
+         }
+
+         navigate(url.pathname + url.search, {
+            history: 'replace'
+         });
+         }, 200);
+      });
+   }
+
+   document.addEventListener('astro:page-load', initSearch);
+</script>

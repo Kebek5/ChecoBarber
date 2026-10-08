@@ -1,10 +1,10 @@
 ---
-import Checkout from '@/presentation/components/templates/Checkout'
+import Checkout from '@/presentation/components/customer/Checkout'
 import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
 
 const user = Astro.locals.user
 ---
 
 <BaseLayout title="Checkout | ChecoBarber">
-  <Checkout client:only="react" userName={user?.name ?? ''} />
+  <Checkout client:only="react" userName={user?.name ?? ''} userEmail={user?.email ?? ''} userTel={user?.tel ?? ''} />
 </BaseLayout>

@@ -1,0 +1,60 @@
+---
+import type { Category } from '@/domain/catalog/Category'
+import type { Product } from '@/domain/catalog/Product'
+import Hero from '@/presentation/components/layout/Hero.astro'
+import CategorySidebar from '../shared/CategorySidebar.astro'
+import MiniCart from '@/presentation/components/customer/MiniCart'
+import ProductCard from '../shared/ProductCard.astro'
+
+interface Props {
+  categories: Category[]
+  products: Product[]
+  activeCategoryId?: string | null
+  search?: string
+  error?: string
+}
+
+const { categories, products, activeCategoryId = null, search = '', error = '' } = Astro.props
+const activeCategory = categories.find((category) => category.id === activeCategoryId)
+
+const title = search
+  ? `Resultados para “${search}”`
+  : activeCategory
+    ? activeCategory.name
+    : 'Todos los productos'
+---
+
+{error ? (
+  <div class="p-10 text-center text-destructive">
+    <h3 class="font-bold">Error de conexión</h3>
+    <p>{error}</p>
+  </div>
+) : (
+  <>
+    <Hero />
+
+    <div id="catalogo" class="mx-auto flex w-full max-w-[1600px] scroll-mt-28 flex-col items-start md:flex-row">
+      <CategorySidebar categories={categories} activeCategoryId={activeCategoryId} />
+
+      <section class="w-full min-w-0 flex-1 p-7.5">
+        <div class="mb-6 flex items-center justify-between gap-5">
+          <h2 class="text-2xl font-bold">{title}</h2>
+        </div>
+
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-6">
+          {products.length > 0 ? (
+            products.map((product) => <ProductCard product={product} />)
+          ) : (
+            <p class="col-span-full p-10 text-center text-muted-foreground">
+              No se encontraron productos disponibles en esta sección.
+            </p>
+          )}
+        </div>
+      </section>
+
+      <div class="hidden self-stretch xl:block">
+        <MiniCart client:only="react" />
+      </div>
+    </div>
+  </>
+)}

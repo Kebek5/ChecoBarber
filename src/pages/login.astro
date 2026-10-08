@@ -22,7 +22,12 @@ if (Astro.request.method === 'POST') {
   try {
     const session = await loginUser.execute({ email, password })
     startSession(Astro.cookies, session.token)
-    return Astro.redirect(next)
+    const role = session.user.role.toLowerCase();
+    if(role !== 'admin')
+      return Astro.redirect(next)
+
+    return Astro.redirect('/dashboard');
+
   } catch (err) {
     // Solo mostramos mensajes pensados para el usuario; el resto (red, bugs) va genérico
     error = err instanceof AppError ? err.message : 'No se pudo iniciar sesión. Intenta de nuevo.'
