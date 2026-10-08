@@ -1,0 +1,176 @@
+type User {
+   id: ID!
+   name: String!
+   tel: String!
+   email: String!
+   role: Role!
+}
+
+type Order {
+   id: ID!
+   date: String!
+   total: Float!
+   status: OrderStatus!
+   client: User!
+   lines: [OrderDetail!]!
+}
+
+type OrderDetail {
+   id: ID!
+   amount: Int!
+   unitPrice: Float!
+   product: Product!
+}
+
+type Product {
+   id: ID!
+   name: String!
+   description: String!
+   price: Float!
+   stock: Int!
+   category: Category!
+   img: String!
+}
+
+type Category {
+   id: ID!
+   name: String!
+   description: String!
+   products: [Product!]!
+}
+
+type Appointment {
+   id: ID!
+   date: String!
+   hour: String!
+   state: AppointmentStatus!
+   price: Float!
+   client: User!
+   service: Service!
+}
+
+type Service {
+   id: ID!
+   name: String!
+   description: String!
+   price: Float!
+   duration: String!
+}
+
+type AuthPayload {
+   token: String!
+   user: User!
+}
+
+enum Role {
+   CLIENT
+   ADMIN
+}
+
+enum OrderStatus {
+   PENDING
+   IN_PROCESS
+   COMPLETED
+}
+
+enum AppointmentStatus {
+   PENDING
+   COMPLETED
+   CANCELLED
+}
+
+input RegisterInput {
+   name: String!
+   tel: String!
+   email: String!
+   password: String!
+}
+
+input LoginInput {
+   email: String!
+   password: String!
+}
+
+# input UserInput {
+#    name: String!
+#    tel: String!
+#    email: String!
+#    password: String!
+#    role: Role!
+# }
+
+input OrderLineInput {
+   idProduct: ID!
+   amount: Int!
+}
+
+input OrderInput {
+   # idClient: ID!
+   lines: [OrderLineInput!]!
+}
+
+input ProductInput {
+   name: String!
+   description: String!
+   price: Float!
+   stock: Int!
+   categoryId: ID!
+   img: String!
+}
+
+input CategoryInput {
+   name: String!
+   description: String!
+}
+
+input AppointmentInput {
+   date: String!
+   hour: String!
+   idService: ID!
+}
+
+input ServiceInput {
+   name: String!
+   description: String!
+   price: Float!
+   duration: String!
+}
+
+type Query {
+   products(limit: Int, offset: Int): [Product!]!
+   product(id: ID!): Product
+
+   categories: [Category!]!
+   category(id: ID!): Category
+
+   users: [User!]!
+   me: User
+
+   orders: [Order!]!
+   order(id: ID!): Order
+
+   appointments: [Appointment!]!
+   appointment(id: ID!): Appointment
+
+   services(limit: Int, offset: Int): [Service!]!
+   service(id: ID!): Service
+}
+
+type Mutation {
+   createProduct(data: ProductInput!): Product!
+   updateProduct(id: ID!, data: ProductInput!): Product
+   deleteProduct(id: ID!): Boolean!
+
+   createCategory(data: CategoryInput!): Category!
+
+   register(data: RegisterInput!): AuthPayload!
+   login(data: LoginInput!): AuthPayload!
+
+   createOrder(data: OrderInput!): Order!
+   updateOrderStatus(id: ID!, status: OrderStatus!): Order
+
+   createAppointment(data: AppointmentInput!): Appointment!
+   updateAppointmentStatus(id: ID!, status: AppointmentStatus!): Appointment
+   
+   createService(data: ServiceInput!): Service!
+}
