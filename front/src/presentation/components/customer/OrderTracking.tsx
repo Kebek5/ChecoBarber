@@ -39,9 +39,20 @@ export default function OrderTracking({ initial, isLoggedIn, payerEmail, mpPubli
 
    const refresh = useCallback(async () => {
       try {
-         setOrder(await paymentsApi.get<TrackedOrder>(`estado/${encodeURIComponent(order.referencia)}`))
+         const updated = await paymentsApi.get<TrackedOrder>(
+            `estado/${encodeURIComponent(order.referencia)}`
+         )
+
+         setOrder((current) => {
+            // Si el pedido no cambió, conserva el estado actual.
+            if (JSON.stringify(current) === JSON.stringify(updated)) {
+            return current
+            }
+
+            return updated
+         })
       } catch {
-         // Si falla una consulta se reintenta en el siguiente ciclo
+         // Si falla una consulta, se reintenta en el siguiente ciclo.
       }
    }, [order.referencia])
 
