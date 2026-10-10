@@ -25,7 +25,7 @@ export const MUTATION_REGISTER = /* GraphQL */ `
 // Pedidos
 export const MUTATION_CREATE_ORDER = /* GraphQL */ `
   mutation CrearPedido($data: OrderInput!) {
-    createOrder(data: $data) { id date total status }
+    createOrder(data: $data) { id date total status reference paymentMethod paymentStatus deliveryType }
   }
 `
 

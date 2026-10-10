@@ -1,4 +1,3 @@
-// @ts-check
 import { defineConfig, envField } from 'astro/config'
 
 import react from '@astrojs/react';
@@ -18,6 +17,18 @@ export default defineConfig({
         context: 'server',
         access: 'secret',
         default: 'http://localhost:4000/',
+      }),
+
+      PUBLIC_MP_PUBLIC_KEY: envField.string({
+        context: 'client',
+        access: 'public',
+        default: '',
+      }),
+
+      PUBLIC_PAYPAL_CLIENT_ID: envField.string({
+        context: 'client',
+        access: 'public',
+        default: '',
       }),
     },
   },

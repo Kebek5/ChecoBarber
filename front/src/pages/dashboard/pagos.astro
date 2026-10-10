@@ -1,0 +1,19 @@
+---
+import PickupPayments from '@/presentation/components/admin/PickupPayments'
+import AdminLayout from '@/presentation/components/layout/AdminLayout.astro'
+
+// Solo administradores: sin sesión se pide login; un cliente regresa a la tienda
+const user = Astro.locals.user
+if (!user) return Astro.redirect('/login?next=/dashboard/pagos')
+if (user.role !== 'ADMIN') return Astro.redirect('/')
+---
+
+<AdminLayout title="Cobros en mostrador | ChecoBarber">
+   <section class="mx-auto w-full max-w-300 p-6">
+      <h1 class="mb-1 text-2xl font-bold">Cobros en mostrador</h1>
+      <p class="mb-6 text-sm text-muted-foreground">
+         Pedidos para recoger que se pagan en la barbería. La lista se actualiza sola cada pocos segundos.
+      </p>
+      <PickupPayments client:only="react" />
+   </section>
+</AdminLayout>

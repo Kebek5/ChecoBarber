@@ -13,6 +13,12 @@ type Order {
    status: OrderStatus!
    client: User!
    lines: [OrderDetail!]!
+   reference: String!
+   paymentMethod: PaymentMethod!
+   paymentStatus: PaymentStatus!
+   deliveryType: DeliveryType!
+   address: String
+   paymentUrl: String
 }
 
 type OrderDetail {
@@ -73,6 +79,27 @@ enum OrderStatus {
    COMPLETED
 }
 
+enum PaymentMethod {
+   MERCADOPAGO
+   LINK
+   PAYPAL
+   TERMINAL
+   CASH
+}
+
+enum PaymentStatus {
+   PENDING
+   APPROVED
+   REJECTED
+   CANCELLED
+   REFUNDED
+}
+
+enum DeliveryType {
+   SHIPPING
+   PICKUP
+}
+
 enum AppointmentStatus {
    PENDING
    COMPLETED
@@ -91,22 +118,16 @@ input LoginInput {
    password: String!
 }
 
-# input UserInput {
-#    name: String!
-#    tel: String!
-#    email: String!
-#    password: String!
-#    role: Role!
-# }
-
 input OrderLineInput {
    idProduct: ID!
    amount: Int!
 }
 
 input OrderInput {
-   # idClient: ID!
    lines: [OrderLineInput!]!
+   paymentMethod: PaymentMethod!
+   deliveryType: DeliveryType!
+   address: String
 }
 
 input ProductInput {

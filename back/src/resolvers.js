@@ -1,4 +1,5 @@
 import { pool, query } from "./db.js";
+import { newReference } from "./payments/orders.js";
 import {
    hashPassword, verifyPassword, signToken,
    requireAuth, requireAdmin, fail, userError,
@@ -40,15 +41,44 @@ const mapCategory = (row) => ({
    description: row.descripcion,
 });
 
-const mapProduct = (row) => ({
-   id: row.id,
-   name: row.nombre,
-   description: row.descripcion,
-   price: row.precio,
-   stock: row.stock,
-   img: row.imagen,
-   categoryId: row.categoria_id, // usado por el resolver de campo Product.category
-});
+const mapProduct = (row) => {
+   const product = {
+      id: row.id,
+      name: row.nombre,
+      description: row.descripcion,
+      price: row.precio,
+      stock: row.stock,
+      img: row.imagen,
+      categoryId: row.categoria_id,
+   };
+   // Si la consulta trajo la categoría con JOIN, se adjunta y se evita otra consulta
+   if (row.categoria_nombre !== undefined) {
+      product.category = row.categoria_id == null
+         ? null
+         : { id: row.categoria_id, name: row.categoria_nombre, description: row.categoria_descripcion };
+   }
+   return product;
+};
+
+const PAYMENT_METHOD_TO_DB = {
+   MERCADOPAGO: "mercadopago",
+   LINK: "link",
+   PAYPAL: "paypal",
+   TERMINAL: "terminal",
+   CASH: "efectivo",
+};
+
+const PAYMENT_METHOD_TO_GQL = Object.fromEntries(
+   Object.entries(PAYMENT_METHOD_TO_DB).map(([gql, db]) => [db, gql])
+);
+
+const PAYMENT_STATUS_TO_GQL = {
+   pendiente: "PENDING",
+   aprobado: "APPROVED",
+   rechazado: "REJECTED",
+   cancelado: "CANCELLED",
+   reembolsado: "REFUNDED",
+};
 
 const mapOrder = (row) => ({
    id: row.id,
@@ -59,6 +89,12 @@ const mapOrder = (row) => ({
    total: row.total,
    status: orderStatusToGraphQL(row.estado),
    clientId: row.cliente_id,
+   reference: row.referencia,
+   paymentMethod: PAYMENT_METHOD_TO_GQL[row.metodo_pago] ?? "CASH",
+   paymentStatus: PAYMENT_STATUS_TO_GQL[row.estado_pago] ?? "PENDING",
+   deliveryType: row.tipo_entrega === "recoger" ? "PICKUP" : "SHIPPING",
+   address: row.direccion,
+   paymentUrl: row.url_pago,
 });
 
 const mapOrderDetail = (row) => ({
@@ -94,11 +130,16 @@ export const resolvers = {
    Query: {
       // Catálogo con paginación simple vía LIMIT/OFFSET en SQL.
       products: async (_, { limit, offset }) => {
-         let sql = "SELECT * FROM producto ORDER BY id";
+         let sql = `SELECT p.*, c.nombre AS categoria_nombre, c.descripcion AS categoria_descripcion
+            FROM producto p
+            LEFT JOIN categoria c ON c.id = p.categoria_id
+            ORDER BY p.id`;
+
          const params = [];
          if (limit != null) {
             params.push(Number(limit));
             sql += ` LIMIT $${params.length}`;
+
             if (offset != null) {
                params.push(Number(offset));
                sql += ` OFFSET $${params.length}`;
@@ -255,6 +296,14 @@ export const resolvers = {
          requireAdmin(ctx);
          const next = orderStatusToDB(status);
          const allowedFrom = ORDER_FLOW.slice(0, ORDER_FLOW.indexOf(next));   // solo hacia adelante
+
+         // No se envía ni se entrega un pedido sin pago aprobado
+         const [current] = await query("SELECT tipo_entrega, estado_pago FROM pedido WHERE id = $1", [id]);
+         if (current && current.estado_pago !== "aprobado") {
+            const needsPayment = next === "realizado" || (next === "en_proceso" && current.tipo_entrega === "envio");
+            if (needsPayment) throw userError("El pedido aún no tiene un pago aprobado.");
+         }
+         
          const rows = await query(
             "UPDATE pedido SET estado = $1 WHERE id = $2 AND estado = ANY($3) RETURNING *",
             [next, id, allowedFrom]);
@@ -302,10 +351,17 @@ export const resolvers = {
 
       createOrder: async (_, { data }, ctx) => {
          const idClient = requireAuth(ctx).id;
-         const { lines } = data;
+         const { lines, paymentMethod, deliveryType } = data;
+         const address = (data.address ?? "").trim();
 
          if (!lines || lines.length === 0) {
             throw userError("El pedido debe tener al menos un renglón (producto y cantidad).");
+         }
+         if (deliveryType === "SHIPPING" && !address) {
+            throw userError("Escribe la dirección de entrega.");
+         }
+         if (["TERMINAL", "CASH"].includes(paymentMethod) && deliveryType !== "PICKUP") {
+            throw userError("El pago en terminal o en efectivo solo está disponible al recoger en tienda.");
          }
 
          const connection = await pool.connect();
@@ -333,18 +389,34 @@ export const resolvers = {
                resolvedLines.push({ ...line, unitPrice });
             }
 
+            total = Math.round(total * 100) / 100;
+
             const { rows: orderRows } = await connection.query(
-               `INSERT INTO pedido (fecha, total, estado, cliente_id)
-                  VALUES (CURRENT_DATE, $1, 'pendiente', $2)
+               `INSERT INTO pedido (fecha, total, estado, cliente_id,
+                  tipo_entrega, direccion, metodo_pago, estado_pago, referencia)
+                  VALUES (CURRENT_DATE, $1, 'pendiente', $2, $3, $4, $5, 'pendiente', $6)
                   RETURNING *`,
-               [total, idClient]
+               [
+                  total,
+                  idClient,
+                  deliveryType === "PICKUP" ? "recoger" : "envio",
+                  deliveryType === "PICKUP" ? null : address,
+                  PAYMENT_METHOD_TO_DB[paymentMethod],
+                  newReference(),
+               ]
             );
             const orderId = orderRows[0].id;
+
+            await connection.query(
+               `INSERT INTO pago_evento (pedido_id, proveedor, evento, estado)
+                  VALUES ($1, $2, 'pedido_creado', 'pendiente')`,
+               [orderId, PAYMENT_METHOD_TO_DB[paymentMethod]]
+            );
 
             for (const line of resolvedLines) {
                await connection.query(
                   `INSERT INTO detalle_pedido (cantidad, precio_unitario, pedido_id, producto_id)
-                     LUES ($1, $2, $3, $4)`,
+                     VALUES ($1, $2, $3, $4)`,
                   [line.amount, line.unitPrice, orderId, line.idProduct]
                );
                await connection.query(
@@ -420,6 +492,7 @@ export const resolvers = {
 
    Product: {
       category: async (product) => {
+         if ("category" in product) return product.category;
          const rows = await query("SELECT * FROM categoria WHERE id = $1", [product.categoryId]);
          return rows[0] ? mapCategory(rows[0]) : null;
       },
