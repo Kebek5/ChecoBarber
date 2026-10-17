@@ -6,7 +6,7 @@ import type { User } from '@/domain/auth/User'
 import { use } from 'react'
 
 // Páginas que requieren haber iniciado sesión
-const PROTECTED = ['/checkout']
+const PROTECTED = ['/checkout','/pago']
 
 const ADMIN_ONLY = ['/dashboard']
 

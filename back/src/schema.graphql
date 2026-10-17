@@ -194,4 +194,17 @@ type Mutation {
    updateAppointmentStatus(id: ID!, status: AppointmentStatus!): Appointment
    
    createService(data: ServiceInput!): Service!
+      startPayment(orderId: ID!, method: PaymentMethod!): PaymentStart!
+   confirmPayment(orderId: ID!, ref: String): PaymentResult!
+}
+enum PaymentMethod {
+    MERCADOPAGO PAYPAL 
+    }
+type PaymentStart
+ {
+    url: String!
+  }
+type PaymentResult 
+{
+    orderId: ID! paid: Boolean! status: String! 
 }
