@@ -1,0 +1,39 @@
+---
+import type { ChartPoint } from '@/domain/admin/DashboardSummary'
+import { formatPrice } from '@/presentation/components/lib/format'
+
+interface Props {
+   data: ChartPoint[]
+   money?: boolean
+}
+
+const { data, money = false } = Astro.props
+const fmt = (value: number) => (money ? formatPrice(value) : String(value))
+const max = Math.max(...data.map((p) => p.value), 0)
+const total = data.reduce((sum, p) => sum + p.value, 0)
+const heightOf = (value: number) => (value > 0 ? Math.max((value / max) * 100, 2) : 0)
+// Se muestra una etiqueta sí y una no (siempre la del último día) para que no se amontonen
+const showLabel = (index: number) => index % 2 === (data.length - 1) % 2
+---
+
+{total === 0 ? (
+   <p class="py-10 text-center text-xs text-muted-foreground">Todavía no hay datos en este periodo.</p>
+) : (
+   <>
+      <p class="mb-3 text-xs text-muted-foreground">
+         Total: <strong class="text-foreground">{fmt(total)}</strong> · Máximo: {fmt(max)}
+      </p>
+      <div class="flex h-44 items-end gap-1" role="img" aria-label={`Gráfica de columnas. Total ${fmt(total)}`}>
+         {data.map((p) => (
+            <div class="flex h-full flex-1 flex-col justify-end" title={`${p.hint ?? p.label}: ${fmt(p.value)}`}>
+               <div class="w-full bg-chart-3 hover:bg-chart-5" style={`height:${heightOf(p.value)}%`}></div>
+            </div>
+         ))}
+      </div>
+      <div class="mt-1 flex gap-1 text-[10px] text-muted-foreground">
+         {data.map((p, i) => (
+            <span class="flex-1 text-center whitespace-nowrap">{showLabel(i) ? p.label : ''}</span>
+         ))}
+      </div>
+   </>
+)}

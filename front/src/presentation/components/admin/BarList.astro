@@ -1,0 +1,32 @@
+---
+import type { ChartPoint } from '@/domain/admin/DashboardSummary'
+import { formatPrice } from '@/presentation/components/lib/format'
+
+interface Props {
+   data: ChartPoint[]
+   money?: boolean
+   empty?: string
+}
+
+const { data, money = false, empty = 'Todavía no hay datos.' } = Astro.props
+const fmt = (value: number) => (money ? formatPrice(value) : String(value))
+const max = Math.max(...data.map((p) => p.value), 0)
+---
+
+{max === 0 ? (
+   <p class="py-10 text-center text-xs text-muted-foreground">{empty}</p>
+) : (
+   <ul class="flex flex-col gap-3">
+      {data.map((p) => (
+         <li title={`${p.label}: ${fmt(p.value)}`}>
+            <div class="mb-1 flex justify-between gap-2 text-xs">
+               <span class="truncate">{p.label}</span>
+               <span class="font-bold">{fmt(p.value)}</span>
+            </div>
+            <div class="h-2 bg-muted">
+               <div class="h-full bg-chart-3" style={`width:${(p.value / max) * 100}%`}></div>
+            </div>
+         </li>
+      ))}
+   </ul>
+)}
