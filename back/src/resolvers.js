@@ -1,6 +1,6 @@
 import { pool, query } from "./db.js";
 import { createMpCheckout, verifyMpPayment, createPaypalCheckout, capturePaypal } from "./payments.js";
-import { newReference } from "./payments/orders.js";
+import { newReference, logEvent } from "./payments/orders.js";
 import {
    hashPassword, verifyPassword, signToken,
    requireAuth, requireAdmin, fail, userError,
