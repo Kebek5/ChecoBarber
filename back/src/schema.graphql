@@ -209,4 +209,6 @@ type Mutation {
    startPayment(orderId: ID!, method: PaymentMethod!): PaymentStart!
    confirmPayment(orderId: ID!, ref: String): PaymentResult!
 }
-
+type Subscription {
+   productCreated: Product!
+}

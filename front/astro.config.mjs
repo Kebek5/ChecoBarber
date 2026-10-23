@@ -20,6 +20,12 @@ export default defineConfig({
         access: 'secret',
         default: 'http://localhost:4000/',
       }),
+      
+            PUBLIC_GRAPHQL_WS_URL: envField.string({
+        context: 'client',
+        access: 'public',
+        default: 'ws://localhost:4000/graphql',
+      }),
 
       PUBLIC_MP_PUBLIC_KEY: envField.string({
         context: 'client',

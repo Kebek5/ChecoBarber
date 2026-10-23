@@ -2,7 +2,8 @@
 import '@/styles/global.css'
 import TopBar from '@/presentation/components/layout/TopBar.astro'
 import Footer from '@/presentation/components/layout/Footer.astro'
-
+import NewProductToast from '@/presentation/components/shared/NewProductToast.tsx'
+import { PUBLIC_GRAPHQL_WS_URL } from 'astro:env/client'
 interface Props {
   title?: string
 }
@@ -27,4 +28,5 @@ const { title = 'ChecoBarber' } = Astro.props
     </main>
     <Footer />
   </body>
+  
 </html>

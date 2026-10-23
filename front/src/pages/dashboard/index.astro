@@ -8,12 +8,12 @@ import Notice from '@/presentation/components/admin/Notice.astro'
 import PageHeader from '@/presentation/components/admin/PageHeader.astro'
 import StatCard from '@/presentation/components/admin/StatCard.astro'
 import StatusBadge from '@/presentation/components/admin/StatusBadge.astro'
-import { toMessage } from '@/presentation/components/lib/adminError'
-// import { formatDate, formatPrice, todayISO } from '@/presentation/lib/format'
-import { formatDate, formatPrice, todayISO } from '@/presentation/components/lib/format'
 import ChartCard from '@/presentation/components/admin/ChartCard.astro'
 import ColumnChart from '@/presentation/components/admin/ColumnChart.astro'
 import BarList from '@/presentation/components/admin/BarList.astro'
+import { toMessage } from '@/presentation/components/lib/adminError'
+import { formatDate, formatPrice, todayISO } from '@/presentation/components/lib/format'
+
 let summary: DashboardSummary | null = null
 let error = ''
 
@@ -31,14 +31,15 @@ try {
    {summary && (
       <div class="p-4">
          <div class="mb-8 grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
-         <StatCard label="Ventas (pedidos completados)" value={formatPrice(summary.revenue)} />
-         <StatCard label="Pedidos pendientes" value={summary.pendingOrders} href="/dashboard/pedidos?estado=PENDING" />
-         <StatCard label="Pedidos en proceso" value={summary.inProcessOrders} href="/dashboard/pedidos?estado=IN_PROCESS" />
-         <StatCard label="Citas hoy" value={summary.appointmentsToday} hint={`${summary.upcomingAppointments} próximas en total`} href="/dashboard/citas" />
-         <StatCard label="Productos con stock bajo" value={summary.lowStockProducts.length} />
-<<<<<<< HEAD
-         <StatCard label="Clientes" value={summary.customers} href="/dashboard/clientes" />
-                  <div class="mb-8 grid gap-4 xl:grid-cols-2">
+            <StatCard label="Ventas (pedidos completados)" value={formatPrice(summary.revenue)} />
+            <StatCard label="Pedidos pendientes" value={summary.pendingOrders} href="/dashboard/pedidos?estado=PENDING" />
+            <StatCard label="Pedidos en proceso" value={summary.inProcessOrders} href="/dashboard/pedidos?estado=IN_PROCESS" />
+            <StatCard label="Citas hoy" value={summary.appointmentsToday} hint={`${summary.upcomingAppointments} próximas en total`} href="/dashboard/citas" />
+            <StatCard label="Productos con stock bajo" value={summary.lowStockProducts.length} />
+            <StatCard label="Clientes" value={summary.customers} href="/dashboard/usuarios" />
+         </div>
+
+         <div class="mb-8 grid gap-4 xl:grid-cols-2">
             <ChartCard title="Ventas por día" description={`Pedidos completados, últimos ${summary.salesByDay.length} días.`}>
                <ColumnChart data={summary.salesByDay} money />
             </ChartCard>
@@ -52,81 +53,77 @@ try {
                <BarList data={summary.appointmentsByService} empty="Todavía no hay citas." />
             </ChartCard>
          </div>
-=======
-         <StatCard label="Clientes" value={summary.customers} href="/dashboard/usuarios" />
->>>>>>> f8bbda96207031e795578e49408e9fbadbb12c26
-         </div>
 
          <div class="grid gap-8 xl:grid-cols-2">
-         <section>
-            <h3 class="mb-3 text-sm font-bold">Últimos pedidos</h3>
-            {summary.recentOrders.length === 0 ? (
-               <p class="text-xs text-muted-foreground">Todavía no hay pedidos.</p>
-            ) : (
-               <DataTable>
-               <thead>
-                  <tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Estado</th></tr>
-               </thead>
-               <tbody>
-                  {summary.recentOrders.map((order) => (
-                     <tr>
-                     <td><a href={`/dashboard/pedidos/${order.id}`} class="font-bold underline">{order.id}</a></td>
-                     <td>{formatDate(order.date)}</td>
-                     <td>{order.customer.name}</td>
-                     <td>{orderUnits(order)}</td>
-                     <td>{formatPrice(order.total)}</td>
-                     <td><StatusBadge kind="order" status={order.status} /></td>
-                     </tr>
-                  ))}
-               </tbody>
-               </DataTable>
-            )}
-         </section>
+            <section>
+               <h3 class="mb-3 text-sm font-bold">Últimos pedidos</h3>
+               {summary.recentOrders.length === 0 ? (
+                  <p class="text-xs text-muted-foreground">Todavía no hay pedidos.</p>
+               ) : (
+                  <DataTable>
+                     <thead>
+                        <tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Estado</th></tr>
+                     </thead>
+                     <tbody>
+                        {summary.recentOrders.map((order) => (
+                           <tr>
+                              <td><a href={`/dashboard/pedidos/${order.id}`} class="font-bold underline">{order.id}</a></td>
+                              <td>{formatDate(order.date)}</td>
+                              <td>{order.customer.name}</td>
+                              <td>{orderUnits(order)}</td>
+                              <td>{formatPrice(order.total)}</td>
+                              <td><StatusBadge kind="order" status={order.status} /></td>
+                           </tr>
+                        ))}
+                     </tbody>
+                  </DataTable>
+               )}
+            </section>
 
-         <section>
-            <h3 class="mb-3 text-sm font-bold">Próximas citas</h3>
-            {summary.nextAppointments.length === 0 ? (
-               <p class="text-xs text-muted-foreground">No hay citas pendientes.</p>
-            ) : (
-               <DataTable>
-               <thead>
-                  <tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Servicio</th></tr>
-               </thead>
-               <tbody>
-                  {summary.nextAppointments.map((appointment) => (
-                     <tr>
-                     <td>{formatDate(appointment.date)}</td>
-                     <td>{appointment.hour}</td>
-                     <td>{appointment.customer.name}</td>
-                     <td>{appointment.service.name}</td>
-                     </tr>
-                  ))}
-               </tbody>
-               </DataTable>
-            )}
-         </section>
+            <section>
+               <h3 class="mb-3 text-sm font-bold">Próximas citas</h3>
+               {summary.nextAppointments.length === 0 ? (
+                  <p class="text-xs text-muted-foreground">No hay citas pendientes.</p>
+               ) : (
+                  <DataTable>
+                     <thead>
+                        <tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Servicio</th></tr>
+                     </thead>
+                     <tbody>
+                        {summary.nextAppointments.map((appointment) => (
+                           <tr>
+                              <td>{formatDate(appointment.date)}</td>
+                              <td>{appointment.hour}</td>
+                              <td>{appointment.customer.name}</td>
+                              <td>{appointment.service.name}</td>
+                           </tr>
+                        ))}
+                     </tbody>
+                  </DataTable>
+               )}
+            </section>
 
-         <section>
-            <h3 class="mb-3 text-sm font-bold">Stock bajo</h3>
-            {summary.lowStockProducts.length === 0 ? (
-               <p class="text-xs text-muted-foreground">Todos los productos tienen stock suficiente.</p>
-            ) : (
-               <DataTable>
-               <thead>
-                  <tr><th>Producto</th><th>Categoría</th><th>Stock</th></tr>
-               </thead>
-               <tbody>
-                  {summary.lowStockProducts.map((product) => (
-                     <tr>
-                     <td><a href={`/dashboard/productos/${product.id}`} class="font-bold underline">{product.name}</a></td>
-                     <td>{product.category?.name ?? '—'}</td>
-                     <td class={product.stock === 0 ? 'font-bold text-destructive' : ''}>{product.stock}</td>
-                     </tr>
-                  ))}
-               </tbody>
-               </DataTable>
-            )}
-         </section>
+            <section>
+               <h3 class="mb-3 text-sm font-bold">Stock bajo</h3>
+               {summary.lowStockProducts.length === 0 ? (
+                  <p class="text-xs text-muted-foreground">Todos los productos tienen stock suficiente.</p>
+               ) : (
+                  <DataTable>
+                     <thead>
+                        <tr><th>Producto</th><th>Categoría</th><th>Stock</th></tr>
+                     </thead>
+                     <tbody>
+                        {summary.lowStockProducts.map((product) => (
+                           <tr>
+                              <td><a href={`/dashboard/productos/${product.id}`} class="font-bold underline">{product.name}</a></td>
+                              <td>{product.category?.name ?? '—'}</td>
+                              <td class={product.stock === 0 ? 'font-bold text-destructive' : ''}>{product.stock}</td>
+                           </tr>
+                        ))}
+                     </tbody>
+                  </DataTable>
+               )}
+            </section>
          </div>
       </div>
    )}

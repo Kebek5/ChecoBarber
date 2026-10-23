@@ -5,7 +5,7 @@ import {
    hashPassword, verifyPassword, signToken,
    requireAuth, requireAdmin, fail, userError,
 } from "./auth.js";
-
+import { pubsub, TOPICS } from "./pubsub.js";
 
 const roleToGraphQL = (rol) => (rol === "admin" ? "ADMIN" : "CLIENT");
 const roleToDB = (role) => (role === "ADMIN" ? "admin" : "cliente");
@@ -154,6 +154,11 @@ export const resolvers = {
          const rows = await query(sql, params);
          return rows.map(mapProduct);
       },
+         Subscription: {
+      productCreated: {
+         subscribe: () => pubsub.asyncIterableIterator(TOPICS.PRODUCT_CREATED),
+      },
+   },
 
       product: async (_, { id }) => {
          const rows = await query("SELECT * FROM producto WHERE id = $1", [id]);
@@ -255,7 +260,9 @@ export const resolvers = {
                RETURNING *`,
             [name, description, price, stock, categoryId, img]
          );
-         return mapProduct(rows[0]);
+                  const product = mapProduct(rows[0]);
+         await pubsub.publish(TOPICS.PRODUCT_CREATED, { productCreated: product });
+         return product;
       },
 
       updateProduct: async (_, { id, data }, ctx) => {
