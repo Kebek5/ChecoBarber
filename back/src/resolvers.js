@@ -6,6 +6,7 @@ import {
    requireAuth, requireAdmin, fail, userError,
 } from "./auth.js";
 
+
 const roleToGraphQL = (rol) => (rol === "admin" ? "ADMIN" : "CLIENT");
 const roleToDB = (role) => (role === "ADMIN" ? "admin" : "cliente");
 
@@ -412,11 +413,7 @@ export const resolvers = {
             );
             const orderId = orderRows[0].id;
 
-            await connection.query(
-               `INSERT INTO pago_evento (pedido_id, proveedor, evento, estado)
-                  VALUES ($1, $2, 'pedido_creado', 'pendiente')`,
-               [orderId, PAYMENT_METHOD_TO_DB[paymentMethod]]
-            );
+            
 
             for (const line of resolvedLines) {
                await connection.query(
@@ -431,6 +428,8 @@ export const resolvers = {
             }
 
             await connection.query("COMMIT");
+
+                        await logEvent(orderId, PAYMENT_METHOD_TO_DB[paymentMethod], "pedido_creado", "pendiente");
 
             return mapOrder(orderRows[0]);
          } catch (err) {

@@ -13,12 +13,14 @@ import { resolvers } from "./resolvers.js";
 import { userFromRequest } from "./auth.js";
 import { paymentsRouter } from "./payments/routes.js";
 import { webhooksRouter } from "./payments/webhooks.js";
+import { connectMongo } from "./mongo.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const typeDefs = readFileSync(join(__dirname, "schema.graphql"), "utf-8");
 
 const app = express();
 const httpServer = http.createServer(app);
+await connectMongo();
 
 const server = new ApolloServer({
    typeDefs,
