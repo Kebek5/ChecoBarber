@@ -31,30 +31,27 @@ try {
    {summary && (
       <div class="p-4">
          <div class="mb-8 grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
-         <StatCard label="Ventas (pedidos completados)" value={formatPrice(summary.revenue)} />
-         <StatCard label="Pedidos pendientes" value={summary.pendingOrders} href="/dashboard/pedidos?estado=PENDING" />
-         <StatCard label="Pedidos en proceso" value={summary.inProcessOrders} href="/dashboard/pedidos?estado=IN_PROCESS" />
-         <StatCard label="Citas hoy" value={summary.appointmentsToday} hint={`${summary.upcomingAppointments} próximas en total`} href="/dashboard/citas" />
-         <StatCard label="Productos con stock bajo" value={summary.lowStockProducts.length} />
-<<<<<<< HEAD
-         <StatCard label="Clientes" value={summary.customers} href="/dashboard/clientes" />
-                  <div class="mb-8 grid gap-4 xl:grid-cols-2">
-            <ChartCard title="Ventas por día" description={`Pedidos completados, últimos ${summary.salesByDay.length} días.`}>
-               <ColumnChart data={summary.salesByDay} money />
-            </ChartCard>
-            <ChartCard title="Pedidos por estado" description="Todos los pedidos registrados.">
-               <BarList data={summary.ordersByStatus} empty="Todavía no hay pedidos." />
-            </ChartCard>
-            <ChartCard title="Productos más vendidos" description="Unidades en pedidos completados.">
-               <BarList data={summary.topProducts} empty="Aún no hay pedidos completados." />
-            </ChartCard>
-            <ChartCard title="Citas por servicio" description="Citas pendientes y completadas.">
-               <BarList data={summary.appointmentsByService} empty="Todavía no hay citas." />
-            </ChartCard>
-         </div>
-=======
-         <StatCard label="Clientes" value={summary.customers} href="/dashboard/usuarios" />
->>>>>>> f8bbda96207031e795578e49408e9fbadbb12c26
+            <StatCard label="Ventas (pedidos completados)" value={formatPrice(summary.revenue)} />
+            <StatCard label="Pedidos pendientes" value={summary.pendingOrders} href="/dashboard/pedidos?estado=PENDING" />
+            <StatCard label="Pedidos en proceso" value={summary.inProcessOrders} href="/dashboard/pedidos?estado=IN_PROCESS" />
+            <StatCard label="Citas hoy" value={summary.appointmentsToday} hint={`${summary.upcomingAppointments} próximas en total`} href="/dashboard/citas" />
+            <StatCard label="Productos con stock bajo" value={summary.lowStockProducts.length} />
+            <StatCard label="Clientes" value={summary.customers} href="/dashboard/clientes" />
+
+            <div class="mb-8 grid col-span-full gap-4 xl:grid-cols-2 w-full">
+               <ChartCard title="Ventas por día" description={`Pedidos completados, últimos ${summary.salesByDay.length} días.`}>
+                  <ColumnChart data={summary.salesByDay} money />
+               </ChartCard>
+               <ChartCard title="Pedidos por estado" description="Todos los pedidos registrados.">
+                  <BarList data={summary.ordersByStatus} empty="Todavía no hay pedidos." />
+               </ChartCard>
+               <ChartCard title="Productos más vendidos" description="Unidades en pedidos completados.">
+                  <BarList data={summary.topProducts} empty="Aún no hay pedidos completados." />
+               </ChartCard>
+               <ChartCard title="Citas por servicio" description="Citas pendientes y completadas.">
+                  <BarList data={summary.appointmentsByService} empty="Todavía no hay citas." />
+               </ChartCard>
+            </div>
          </div>
 
          <div class="grid gap-8 xl:grid-cols-2">
