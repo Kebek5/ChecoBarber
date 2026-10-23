@@ -36,6 +36,7 @@ try {
          <StatCard label="Pedidos en proceso" value={summary.inProcessOrders} href="/dashboard/pedidos?estado=IN_PROCESS" />
          <StatCard label="Citas hoy" value={summary.appointmentsToday} hint={`${summary.upcomingAppointments} próximas en total`} href="/dashboard/citas" />
          <StatCard label="Productos con stock bajo" value={summary.lowStockProducts.length} />
+<<<<<<< HEAD
          <StatCard label="Clientes" value={summary.customers} href="/dashboard/clientes" />
                   <div class="mb-8 grid gap-4 xl:grid-cols-2">
             <ChartCard title="Ventas por día" description={`Pedidos completados, últimos ${summary.salesByDay.length} días.`}>
@@ -51,6 +52,9 @@ try {
                <BarList data={summary.appointmentsByService} empty="Todavía no hay citas." />
             </ChartCard>
          </div>
+=======
+         <StatCard label="Clientes" value={summary.customers} href="/dashboard/usuarios" />
+>>>>>>> f8bbda96207031e795578e49408e9fbadbb12c26
          </div>
 
          <div class="grid gap-8 xl:grid-cols-2">
