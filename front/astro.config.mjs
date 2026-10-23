@@ -5,6 +5,8 @@ import node from '@astrojs/node';
 
 import tailwindcss from '@tailwindcss/vite';
 
+import path from 'node:path';
+
 // https://astro.build/config
 export default defineConfig({
   output: 'server',
@@ -34,6 +36,11 @@ export default defineConfig({
   },
 
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    resolve: {
+      alias: {
+        '@': path.resolve('./src'),
+      },
+    },
   }
 });

@@ -64,3 +64,9 @@ export const MUTATION_UPDATE_PRODUCT = /* GraphQL */ `
 export const MUTATION_DELETE_PRODUCT = /* GraphQL */ `
    mutation EliminarProducto($id: ID!) { deleteProduct(id: $id) }
 `
+
+export const MUTATION_UPDATE_USER_ROLE = /* GraphQL */ `
+   mutation ActualizarRol($id: ID!, $role: Role!) {
+      updateUserRole(id: $id, role: $role) { id name tel email role }
+   }
+`

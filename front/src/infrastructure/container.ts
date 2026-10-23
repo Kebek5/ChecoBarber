@@ -18,6 +18,7 @@ import { GraphqlAuthGateway } from '@/infrastructure/repositories/GraphqlAuthGat
 import { GraphqlCatalogRepository } from '@/infrastructure/repositories/GraphqlCatalogRepository'
 import { GraphqlOrderGateway } from '@/infrastructure/repositories/GraphqlOrderGateway'
 import { GraphqlPaymentGateway } from '@/infrastructure/repositories/GraphqlPaymentGateway'
+import { UpdateUserRole } from '@/application/useCases/UpdateUserRole'
 
 const graphql = createGraphqlClient(config.graphqlUrl)
 
@@ -35,6 +36,7 @@ export const placeOrder = new PlaceOrder(orderGateway)
 export const registerUser = new RegisterUser(authGateway)
 export const loginUser = new LoginUser(authGateway)
 export const getCurrentUser = new GetCurrentUser(authGateway)
+export const updateUserRole = new UpdateUserRole(adminGateway)
 
 export const getDashboardSummary = new GetDashboardSummary(
    adminGateway,

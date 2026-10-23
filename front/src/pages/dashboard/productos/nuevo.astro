@@ -1,0 +1,40 @@
+---
+import type { Category } from '@/domain/catalog/Category'
+import { createProduct, getCategories } from '@/infrastructure/container'
+import Notice from '@/presentation/components/admin/Notice.astro'
+import PageHeader from '@/presentation/components/admin/PageHeader.astro'
+import ProductEditor from '@/presentation/components/admin/ProductEditor.astro'
+import AdminLayout from '@/presentation/components/layout/AdminLayout.astro'
+import { toMessage } from '@/presentation/components/lib/adminError'
+import { emptyProductForm, readProductForm, toProductInput } from '@/presentation/components/lib/productForm'
+
+const token = Astro.locals.token!
+
+let categories: Category[] = []
+let values = { ...emptyProductForm }
+let error = ''
+
+try {
+   categories = await getCategories.execute()
+} catch (err) {
+   error = toMessage(err, 'No se pudieron cargar las categorías.')
+}
+
+if (Astro.request.method === 'POST') {
+   values = readProductForm(await Astro.request.formData())
+   try {
+      await createProduct.execute(token, toProductInput(values))
+      return Astro.redirect('/dashboard/productos?ok=creado')
+   } catch (err) {
+      error = toMessage(err, 'No se pudo crear el producto.')
+   }
+}
+---
+
+<AdminLayout title="Nuevo producto | Administración">
+   <section class="mx-auto w-full max-w-300 p-6">
+      <PageHeader title="Nuevo producto" description="Completa los datos para agregarlo a la tienda." />
+      <Notice error={error} />
+      <ProductEditor categories={categories} values={values} submitLabel="Crear producto" />
+   </section>
+</AdminLayout>

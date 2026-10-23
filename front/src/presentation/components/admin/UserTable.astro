@@ -1,0 +1,58 @@
+---
+import type { User } from '@/domain/auth/User'
+import { buttonVariants } from '@/presentation/components/ui/button'
+import DataTable from './DataTable.astro'
+
+interface Props {
+   users: User[]
+   currentUserId: string
+}
+
+const { users, currentUserId } = Astro.props
+---
+
+{users.length === 0 ? (
+   <p class="text-xs text-muted-foreground">No hay usuarios.</p>
+) : (
+   <DataTable>
+      <thead>
+         <tr><th>Nombre</th><th>Correo</th><th>Teléfono</th><th>Rol</th><th>Acción</th></tr>
+      </thead>
+      <tbody>
+         {users.map((user) => {
+            const isAdmin = user.role === 'ADMIN'
+            const isSelf = user.id === currentUserId
+            return (
+               <tr>
+                  <td class="font-bold">{user.name}{isSelf && <span class="ml-1 font-normal text-muted-foreground">(tú)</span>}</td>
+                  <td>{user.email}</td>
+                  <td>{user.tel}</td>
+                  <td>
+                     <span class={`inline-block px-2 py-0.5 text-[11px] font-bold ${isAdmin ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                        {isAdmin ? 'Administrador' : 'Cliente'}
+                     </span>
+                  </td>
+                  <td>
+                     {isSelf ? (
+                        <span class="text-muted-foreground">—</span>
+                     ) : (
+                        <form
+                           method="post"
+                           data-confirm={isAdmin
+                              ? `¿Quitar el acceso de administrador a ${user.name}?`
+                              : `¿Dar acceso de administrador a ${user.name}?`}
+                        >
+                           <input type="hidden" name="id" value={user.id} />
+                           <input type="hidden" name="role" value={isAdmin ? 'CLIENT' : 'ADMIN'} />
+                           <button type="submit" class={buttonVariants({ variant: 'outline', size: 'sm' })}>
+                              {isAdmin ? 'Quitar admin' : 'Hacer admin'}
+                           </button>
+                        </form>
+                     )}
+                  </td>
+               </tr>
+            )
+         })}
+      </tbody>
+   </DataTable>
+)}

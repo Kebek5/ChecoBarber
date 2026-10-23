@@ -1,4 +1,4 @@
-import type { User } from "@/domain/auth/User";
+import type { Role, User } from "@/domain/auth/User";
 import type { Appointment, AppointmentStatus } from '@/domain/appointment/Appointment'
 import type { Product } from "@/domain/catalog/Product";
 import type { ProductInput } from "@/domain/catalog/ProductInput"
@@ -21,6 +21,7 @@ export interface AdminAppointmentGateway {
    updateAppointmentStatus(token: string, id: string, status: AppointmentStatus): Promise<Appointment | null>
 }
 
-export interface AdminUserGateway{
+export interface AdminUserGateway {
    listUsers(token: string): Promise<User[]>
+   updateUserRole(token: string, id: string, role: Role): Promise<User | null>
 }

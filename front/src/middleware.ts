@@ -3,7 +3,6 @@ import { BackendUnavailableError } from '@/application/errors'
 import { endSession, readSessionToken } from '@/infrastructure/auth/session'
 import { getCurrentUser } from '@/infrastructure/container'
 import type { User } from '@/domain/auth/User'
-import { use } from 'react'
 
 // Páginas que requieren haber iniciado sesión
 const PROTECTED = ['/checkout','/pago']
@@ -47,10 +46,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return context.redirect(`/login?next=${encodeURIComponent(pathname + search)}`)
   }
 
-  if(needsAdmin && user?.role !== 'ADMIN'){
-    if(backendDown){
-      return context.redirect('/');
-    }
+    if (needsAdmin && user?.role !== 'ADMIN') {
+      if (backendDown || user) return context.redirect('/')
+      return context.redirect(`/login?next=${encodeURIComponent(pathname + search)}`)
   }
 
   return next()
