@@ -1,0 +1,72 @@
+---
+import type { AdminOrder } from '@/domain/order/AdminOrder'
+import { isOrderStatus } from '@/domain/order/AdminOrder'
+import { InvalidInputError } from '@/application/errors'
+import { listAdminOrders, updateOrderStatus } from '@/infrastructure/container'
+import Notice from '@/presentation/components/admin/Notice.astro'
+import OrderTable from '@/presentation/components/admin/OrderTable.astro'
+import PageHeader from '@/presentation/components/admin/PageHeader.astro'
+import AdminLayout from '@/presentation/components/layout/AdminLayout.astro'
+import { toMessage } from '@/presentation/components/lib/adminError'
+
+const token = Astro.locals.token!
+
+let filter = Astro.url.searchParams.get('estado') ?? ''
+let success = Astro.url.searchParams.get('ok') ? 'Estado del pedido actualizado.' : ''
+let error = ''
+
+if (Astro.request.method === 'POST') {
+   const form = await Astro.request.formData()
+   const id = String(form.get('id') ?? '')
+   const status = String(form.get('status') ?? '')
+   filter = String(form.get('estado') ?? '')
+
+   try {
+      if (!isOrderStatus(status)) throw new InvalidInputError('El estado no es válido.')
+      await updateOrderStatus.execute(token, id, status)
+      const query = filter ? `?estado=${encodeURIComponent(filter)}&ok=1` : '?ok=1'
+      return Astro.redirect(`/dashboard/pedidos${query}`)
+   } catch (err) {
+      success = ''
+      error = toMessage(err, 'No se pudo actualizar el pedido.')
+   }
+}
+
+let orders: AdminOrder[] = []
+try {
+   orders = await listAdminOrders.execute(token)
+} catch (err) {
+   error = error || toMessage(err, 'No se pudieron cargar los pedidos.')
+}
+
+const visible = [...orders]
+   .filter((order) => !filter || order.status === filter)
+   .sort((a, b) => b.date.localeCompare(a.date) || Number(b.id) - Number(a.id))
+
+const tabs = [
+   { value: '', label: 'Todos' },
+   { value: 'PENDING', label: 'Pendientes' },
+   { value: 'IN_PROCESS', label: 'En proceso' },
+   { value: 'COMPLETED', label: 'Completados' },
+]
+---
+
+<AdminLayout title="Pedidos | Administración">
+   <section class="mx-auto w-full max-w-300 p-6">
+      <PageHeader title="Pedidos" description="Avanza cada pedido: pendiente → en proceso → completado." />
+      <Notice error={error} success={success} />
+
+      <nav class="mb-4 flex flex-wrap gap-2 text-xs">
+         {tabs.map((tab) => (
+            <a
+               href={tab.value ? `/dashboard/pedidos?estado=${tab.value}` : '/dashboard/pedidos'}
+               class={`border px-3 py-1.5 hover:bg-muted ${filter === tab.value ? 'bg-muted font-bold' : ''}`}
+            >
+               {tab.label}
+            </a>
+         ))}
+      </nav>
+
+      <OrderTable orders={visible} filter={filter} />
+   </section>
+</AdminLayout>

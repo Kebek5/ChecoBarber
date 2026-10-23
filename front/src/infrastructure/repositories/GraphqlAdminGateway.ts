@@ -4,7 +4,7 @@ import type {
    AdminOrderGateway,
    AdminUserGateway,
 } from '@/application/ports/AdminGateway'
-import type { User } from '@/domain/auth/User'
+import type { Role, User } from '@/domain/auth/User'
 import type { Appointment, AppointmentStatus } from '@/domain/appointment/Appointment'
 import type { Product } from '@/domain/catalog/Product'
 import type { ProductInput } from '@/domain/catalog/ProductInput'
@@ -16,6 +16,7 @@ import {
    MUTATION_UPDATE_APPOINTMENT_STATUS,
    MUTATION_UPDATE_ORDER_STATUS,
    MUTATION_UPDATE_PRODUCT,
+   MUTATION_UPDATE_USER_ROLE,
    QUERY_ADMIN_APPOINTMENTS,
    QUERY_ADMIN_ORDER_BY_ID,
    QUERY_ADMIN_ORDERS,
@@ -90,19 +91,29 @@ export class GraphqlAdminGateway implements AdminAppointmentGateway, AdminCatalo
       return res.updateOrderStatus ? toOrder(res.updateOrderStatus) : null
    }
 
-   async findOrder(token: string, id: string): Promise<AdminOrder | null> {
-      const res = await this.gql<{findOrder: OrderDTO | null}>(QUERY_ADMIN_ORDER_BY_ID, {id}, {token})
-      return res.findOrder ? toOrder(res.findOrder) : null
+      async findOrder(token: string, id: string): Promise<AdminOrder | null> {
+      const res = await this.gql<{ order: OrderDTO | null }>(QUERY_ADMIN_ORDER_BY_ID, { id }, { token })
+      return res.order ? toOrder(res.order) : null
    }
 
    async listOrders(token: string): Promise<AdminOrder[]> {
-      const res = await this.gql<{orders: OrderDTO[]}>(QUERY_ADMIN_ORDERS, {token})
+      const res = await this.gql<{ orders: OrderDTO[] }>(QUERY_ADMIN_ORDERS, {}, { token })
       return res.orders.map(toOrder)
    }
 
    async listAppointments(token: string): Promise<Appointment[]> {
-      const res = await this.gql<{appointments: AppointmentDTO[]}>(QUERY_ADMIN_APPOINTMENTS, {token})
+      const res = await this.gql<{ appointments: AppointmentDTO[] }>(QUERY_ADMIN_APPOINTMENTS, {}, { token })
       return res.appointments.map(toAppointment)
+   }
+
+   async listUsers(token: string): Promise<User[]> {
+      const res = await this.gql<{ users: User[] }>(QUERY_ADMIN_USERS, {}, { token })
+      return res.users
+   }
+
+   async updateUserRole(token: string, id: string, role: Role): Promise<User | null> {
+      const res = await this.gql<{ updateUserRole: User | null }>(MUTATION_UPDATE_USER_ROLE, { id, role }, { token })
+      return res.updateUserRole
    }
 
    async updateAppointmentStatus(token: string, id: string, status: AppointmentStatus): Promise<Appointment | null> {
@@ -110,8 +121,5 @@ export class GraphqlAdminGateway implements AdminAppointmentGateway, AdminCatalo
       return res.updateAppointmentStatus ? toAppointment(res.updateAppointmentStatus) : null
    }
 
-   async listUsers(token: string): Promise<User[]> {
-      const res = await this.gql<{users: User[]}>(QUERY_ADMIN_USERS, {token})
-      return res.users
-   }
+   
 }

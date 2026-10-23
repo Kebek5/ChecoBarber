@@ -14,8 +14,8 @@ const items = [
    { href: '/dashboard', label: 'Resumen', Icon: SquaresFourIcon, exact: true },
    { href: '/dashboard/productos', label: 'Productos', Icon: PackageIcon },
    { href: '/dashboard/pedidos', label: 'Pedidos', Icon: ReceiptIcon },
-   { href: '/dashboard/citas', label: 'Citas', Icon: CalendarBlankIcon },
-   { href: '/dashboard/clientes', label: 'Clientes', Icon: UsersIcon },
+   // { href: '/dashboard/citas', label: 'Citas', Icon: CalendarBlankIcon },
+   { href: '/dashboard/usuarios', label: 'Usuarios', Icon: UsersIcon },
    { href: '/dashboard/pagos', label: 'Cobros', Icon: CreditCardIcon },
 ]
 
@@ -24,20 +24,22 @@ const isActive = (href: string, exact = false) =>
 
 // Mismo estilo que el Sidebar de la tienda
 const linkClass = (active: boolean) =>
-   `flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs hover:bg-muted ${active ? 'bg-muted font-bold' : ''}`
+   `flex w-38 items-center gap-2 px-2.5 py-1.5 text-left text-xs hover:bg-muted ${active ? 'bg-muted font-bold' : ''}`
 ---
 
-<aside class="w-full shrink-0 border-b p-4 md:w-52 md:border-r md:border-b-0">
-   <h3 class="mb-3 text-sm font-bold">Panel</h3>
+<section class="flex flex-row items-center justify-between w-full shrink-0 border-b p-4 sticky top-22.5 left-0 z-50 bg-white">
+   <!-- Título del panel -->
+   <h3 class="text-sm font-bold">Panel</h3>
 
-   <ul class="flex flex-row flex-wrap gap-1 md:flex-col">
+   <!-- Lista de enlaces alineada horizontalmente -->
+   <ul class="flex flex-row flex-wrap items-center justify-end gap-4 w-auto">
       {items.map(({ href, label, Icon, exact }) => (
-         <li>
-         <a href={href} class={linkClass(isActive(href, exact))} aria-current={isActive(href, exact) ? 'page' : undefined}>
-            <Icon />
-            {label}
-         </a>
+         <li class="shrink-0">
+            <a href={href} class={`${linkClass(isActive(href, exact))} flex items-center gap-2`} aria-current={isActive(href, exact) ? 'page' : undefined}>
+               <Icon />
+               <span>{label}</span>
+            </a>
          </li>
       ))}
    </ul>
-</aside>
+</section>

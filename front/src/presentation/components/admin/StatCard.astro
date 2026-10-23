@@ -1,0 +1,17 @@
+---
+interface Props {
+   label: string
+   value: string | number
+   hint?: string
+   href?: string
+}
+
+const { label, value, hint, href } = Astro.props
+const Tag = href ? 'a' : 'div'
+---
+
+<Tag href={href} class={`flex flex-col gap-1 border p-4 ${href ? 'hover:bg-muted' : ''}`}>
+   <span class="text-xs text-muted-foreground">{label}</span>
+   <span class="text-2xl font-bold">{value}</span>
+   {hint && <span class="text-xs text-muted-foreground">{hint}</span>}
+</Tag>

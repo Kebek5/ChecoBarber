@@ -1,0 +1,78 @@
+---
+import type { Category } from '@/domain/catalog/Category'
+import type { Product } from '@/domain/catalog/Product'
+import { deleteProduct, getCategories, getProductById, updateProduct } from '@/infrastructure/container'
+import Notice from '@/presentation/components/admin/Notice.astro'
+import PageHeader from '@/presentation/components/admin/PageHeader.astro'
+import ProductEditor from '@/presentation/components/admin/ProductEditor.astro'
+import AdminLayout from '@/presentation/components/layout/AdminLayout.astro'
+import { buttonVariants } from '@/presentation/components/ui/button'
+import { toMessage } from '@/presentation/components/lib/adminError'
+import { emptyProductForm, productToForm, readProductForm, toProductInput } from '@/presentation/components/lib/productForm'
+
+const token = Astro.locals.token!
+const id = Astro.params.id ?? ''
+
+let product: Product | null = null
+let categories: Category[] = []
+let error = ''
+let success = Astro.url.searchParams.get('ok') === 'guardado' ? 'Producto actualizado.' : ''
+
+try {
+   ;[product, categories] = await Promise.all([getProductById.execute(id), getCategories.execute()])
+} catch (err) {
+   error = toMessage(err, 'No se pudo cargar el producto.')
+}
+
+if (!product && !error) return new Response('Producto no encontrado', { status: 404 })
+
+let values = product ? productToForm(product) : { ...emptyProductForm }
+
+if (Astro.request.method === 'POST' && product) {
+   const form = await Astro.request.formData()
+   const intent = String(form.get('intent') ?? 'save')
+
+   try {
+      if (intent === 'delete') {
+         await deleteProduct.execute(token, id)
+         return Astro.redirect('/dashboard/productos?ok=eliminado')
+      }
+      values = readProductForm(form)
+      await updateProduct.execute(token, id, toProductInput(values))
+      return Astro.redirect(`/dashboard/productos/${id}?ok=guardado`)
+   } catch (err) {
+      success = ''
+      error = toMessage(
+         err,
+         intent === 'delete'
+            ? 'No se pudo eliminar el producto. Puede que tenga pedidos asociados.'
+            : 'No se pudo guardar el producto.'
+      )
+   }
+}
+---
+
+<AdminLayout title={`${product?.name ?? 'Producto'} | Administración`}>
+   <section class="mx-auto w-full max-w-300 p-6">
+      <PageHeader title="Editar producto" description={product ? `ID ${product.id}` : undefined} />
+      <Notice error={error} success={success} />
+
+      {product && (
+         <>
+            <ProductEditor categories={categories} values={values} submitLabel="Guardar cambios" />
+
+            <form
+               method="post"
+               class="mt-10 max-w-xl border-t pt-6"
+               data-confirm="¿Eliminar este producto? Esta acción no se puede deshacer."
+            >
+               <input type="hidden" name="intent" value="delete" />
+               <h2 class="mb-2 text-sm font-bold">Zona de peligro</h2>
+               <button type="submit" class={buttonVariants({ variant: 'outline', className: 'text-destructive' })}>
+                  Eliminar producto
+               </button>
+            </form>
+         </>
+      )}
+   </section>
+</AdminLayout>
