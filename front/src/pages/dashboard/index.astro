@@ -11,7 +11,9 @@ import StatusBadge from '@/presentation/components/admin/StatusBadge.astro'
 import { toMessage } from '@/presentation/components/lib/adminError'
 // import { formatDate, formatPrice, todayISO } from '@/presentation/lib/format'
 import { formatDate, formatPrice, todayISO } from '@/presentation/components/lib/format'
-
+import ChartCard from '@/presentation/components/admin/ChartCard.astro'
+import ColumnChart from '@/presentation/components/admin/ColumnChart.astro'
+import BarList from '@/presentation/components/admin/BarList.astro'
 let summary: DashboardSummary | null = null
 let error = ''
 
@@ -35,6 +37,20 @@ try {
          <StatCard label="Citas hoy" value={summary.appointmentsToday} hint={`${summary.upcomingAppointments} próximas en total`} href="/dashboard/citas" />
          <StatCard label="Productos con stock bajo" value={summary.lowStockProducts.length} />
          <StatCard label="Clientes" value={summary.customers} href="/dashboard/clientes" />
+                  <div class="mb-8 grid gap-4 xl:grid-cols-2">
+            <ChartCard title="Ventas por día" description={`Pedidos completados, últimos ${summary.salesByDay.length} días.`}>
+               <ColumnChart data={summary.salesByDay} money />
+            </ChartCard>
+            <ChartCard title="Pedidos por estado" description="Todos los pedidos registrados.">
+               <BarList data={summary.ordersByStatus} empty="Todavía no hay pedidos." />
+            </ChartCard>
+            <ChartCard title="Productos más vendidos" description="Unidades en pedidos completados.">
+               <BarList data={summary.topProducts} empty="Aún no hay pedidos completados." />
+            </ChartCard>
+            <ChartCard title="Citas por servicio" description="Citas pendientes y completadas.">
+               <BarList data={summary.appointmentsByService} empty="Todavía no hay citas." />
+            </ChartCard>
+         </div>
          </div>
 
          <div class="grid gap-8 xl:grid-cols-2">
