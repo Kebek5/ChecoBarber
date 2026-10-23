@@ -34,7 +34,7 @@ try {
          <StatCard label="Pedidos en proceso" value={summary.inProcessOrders} href="/dashboard/pedidos?estado=IN_PROCESS" />
          <StatCard label="Citas hoy" value={summary.appointmentsToday} hint={`${summary.upcomingAppointments} próximas en total`} href="/dashboard/citas" />
          <StatCard label="Productos con stock bajo" value={summary.lowStockProducts.length} />
-         <StatCard label="Clientes" value={summary.customers} href="/dashboard/clientes" />
+         <StatCard label="Clientes" value={summary.customers} href="/dashboard/usuarios" />
          </div>
 
          <div class="grid gap-8 xl:grid-cols-2">
