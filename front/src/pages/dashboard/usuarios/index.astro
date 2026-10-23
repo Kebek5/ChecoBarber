@@ -1,0 +1,48 @@
+---
+import type { User } from '@/domain/auth/User'
+import { listUsers, updateUserRole } from '@/infrastructure/container'
+import Notice from '@/presentation/components/admin/Notice.astro'
+import PageHeader from '@/presentation/components/admin/PageHeader.astro'
+import UserTable from '@/presentation/components/admin/UserTable.astro'
+import AdminLayout from '@/presentation/components/layout/AdminLayout.astro'
+import { toMessage } from '@/presentation/components/lib/adminError'
+
+const token = Astro.locals.token!
+const currentUserId = Astro.locals.user?.id ?? ''
+
+let success = Astro.url.searchParams.get('ok') ? 'Rol actualizado.' : ''
+let error = ''
+
+if (Astro.request.method === 'POST') {
+   const form = await Astro.request.formData()
+   try {
+      await updateUserRole.execute(
+         token,
+         currentUserId,
+         String(form.get('id') ?? ''),
+         String(form.get('role') ?? '')
+      )
+      return Astro.redirect('/dashboard/usuarios?ok=1')
+   } catch (err) {
+      success = ''
+      error = toMessage(err, 'No se pudo cambiar el rol.')
+   }
+}
+
+let users: User[] = []
+try {
+   users = await listUsers.execute(token)
+} catch (err) {
+   error = error || toMessage(err, 'No se pudieron cargar los usuarios.')
+}
+
+users = [...users].sort((a, b) => a.name.localeCompare(b.name, 'es'))
+---
+
+<AdminLayout title="Usuarios | Administración">
+   <section class="mx-auto w-full max-w-300 p-6">
+      <PageHeader title="Usuarios" description="Da o quita el acceso de administrador." />
+      <Notice error={error} success={success} />
+      <UserTable users={users} currentUserId={currentUserId} />
+   </section>
+</AdminLayout>

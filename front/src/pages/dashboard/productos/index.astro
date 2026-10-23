@@ -1,0 +1,44 @@
+---
+import type { Category } from '@/domain/catalog/Category'
+import type { Product } from '@/domain/catalog/Product'
+import { getCategories, listProducts } from '@/infrastructure/container'
+import Board from '@/presentation/components/admin/Board.astro'
+import Notice from '@/presentation/components/admin/Notice.astro'
+import PageHeader from '@/presentation/components/admin/PageHeader.astro'
+import AdminLayout from '@/presentation/components/layout/AdminLayout.astro'
+import { buttonVariants } from '@/presentation/components/ui/button'
+
+const search = (Astro.url.searchParams.get('q') ?? '').trim()
+const term = search.toLowerCase()
+
+const okMessages: Record<string, string> = {
+   creado: 'Producto creado.',
+   eliminado: 'Producto eliminado.',
+}
+const success = okMessages[Astro.url.searchParams.get('ok') ?? ''] ?? ''
+
+let categories: Category[] = []
+let products: Product[] = []
+let error = ''
+
+try {
+   const [categoriesData, productsData] = await Promise.all([getCategories.execute(), listProducts.execute()])
+   categories = categoriesData
+   products = term
+      ?  productsData.filter((product) =>
+            product.name.toLowerCase().includes(term) || (product.description && product.description.toLowerCase().includes(term))
+         ): productsData
+} catch (err) {
+   error = err instanceof Error ? err.message : 'Error de conexión.'
+}
+---
+
+<AdminLayout title="Productos | Administración">
+   <div class="mx-auto w-full max-w-[1600px] px-7.5 pt-6">
+      <PageHeader title="Productos" description="Crea, edita o elimina productos de la tienda.">
+         <a href="/dashboard/productos/nuevo" class={buttonVariants({ size: 'lg' })}>Nuevo producto</a>
+      </PageHeader>
+      <Notice success={success} />
+   </div>
+   <Board categories={categories} products={products} search={search} error={error} />
+</AdminLayout>

@@ -38,6 +38,11 @@ CREATE TABLE pedido (
   total       FLOAT NOT NULL DEFAULT 0,
   estado      VARCHAR(10) NOT NULL DEFAULT 'pendiente'
               CHECK (estado IN ('pendiente', 'en_proceso', 'realizado')),
+  metodo_pago VARCHAR(12)
+              CHECK (metodo_pago IN ('mercadopago', 'paypal')),
+  estado_pago VARCHAR(12) NOT NULL DEFAULT 'pendiente'
+              CHECK (estado_pago IN ('pendiente', 'pagado')),
+  pago_ref    TEXT,
   cliente_id  INT   NOT NULL,
   FOREIGN KEY (cliente_id) REFERENCES usuario(id)
     ON DELETE RESTRICT ON UPDATE CASCADE

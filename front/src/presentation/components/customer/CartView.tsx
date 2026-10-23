@@ -1,4 +1,6 @@
-import { MinusIcon, PlusIcon, ShoppingCartIcon } from '@phosphor-icons/react'
+import { MinusIcon } from '@phosphor-icons/react/dist/csr/Minus'
+import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus'
+import { ShoppingCartIcon } from '@phosphor-icons/react/dist/csr/ShoppingCart'
 import { addItemToCart, useCartStore } from '@/infrastructure/cart/zustandCartStore'
 import { Badge } from '@/presentation/components/ui/badge'
 import { Button, buttonVariants } from '@/presentation/components/ui/button'

@@ -1,6 +1,10 @@
 import type { APIRoute } from 'astro'
 import { BackendUnavailableError, UnauthenticatedError } from '@/application/errors'
 import { placeOrder } from '@/infrastructure/container'
+import type { DeliveryType, PaymentMethod } from '@/domain/order/Payment'
+
+const PAYMENT_METHODS: PaymentMethod[] = ['MERCADOPAGO', 'LINK', 'PAYPAL', 'TERMINAL', 'CASH']
+const DELIVERY_TYPES: DeliveryType[] = ['SHIPPING', 'PICKUP']
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -17,7 +21,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       : json({ error: 'Debes iniciar sesión para finalizar la compra.' }, 401)
   }
 
-  let body: { lines?: unknown }
+  let body: { lines?: unknown; paymentMethod?: unknown; deliveryType?: unknown; address?: unknown }
   try {
     body = await request.json()
   } catch {
@@ -26,6 +30,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   try {
     const lines = Array.isArray(body?.lines) ? body.lines : []
+    const paymentMethod = PAYMENT_METHODS.find((m) => m === body?.paymentMethod)
+    const deliveryType = DELIVERY_TYPES.find((d) => d === body?.deliveryType)
+    if (!paymentMethod || !deliveryType) {
+      return json({ error: 'Selecciona un método de pago y un tipo de entrega.' }, 400)
+    }
 
     // Los precios no viajan: el backend los toma de la base de datos
     const confirmation = await placeOrder.execute(token, {
@@ -34,6 +43,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
         productId: String(line.productId),
         amount: Number(line.amount),
       })),
+      paymentMethod,
+      deliveryType,
+      address: typeof body.address === 'string' ? body.address : undefined,
     })
 
     return json(confirmation)

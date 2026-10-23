@@ -1,0 +1,36 @@
+---
+interface Props {
+   kind: 'order' | 'payment' | 'appointment'
+   status: string
+}
+
+const { status } = Astro.props
+
+const labels: Record<string, string> = {
+   PENDING: 'Pendiente',
+   IN_PROCESS: 'En proceso',
+   COMPLETED: 'Completado',
+   CANCELLED: 'Cancelado',
+   PAID: 'Pagado',
+   APPROVED: 'Aprobado',
+   REJECTED: 'Rechazado',
+   CONFIRMED: 'Confirmada',
+}
+
+const tones: Record<string, string> = {
+   PENDING: 'bg-yellow-100 text-yellow-800',
+   IN_PROCESS: 'bg-blue-100 text-blue-800',
+   COMPLETED: 'bg-green-100 text-green-800',
+   PAID: 'bg-green-100 text-green-800',
+   APPROVED: 'bg-green-100 text-green-800',
+   CONFIRMED: 'bg-green-100 text-green-800',
+   CANCELLED: 'bg-red-100 text-red-800',
+   REJECTED: 'bg-red-100 text-red-800',
+}
+
+const key = status.toUpperCase()
+---
+
+<span class={`inline-block px-2 py-0.5 text-[11px] font-bold ${tones[key] ?? 'bg-muted text-foreground'}`}>
+   {labels[key] ?? status}
+</span>

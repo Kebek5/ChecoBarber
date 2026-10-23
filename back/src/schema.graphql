@@ -13,6 +13,12 @@ type Order {
    status: OrderStatus!
    client: User!
    lines: [OrderDetail!]!
+   reference: String!
+   paymentMethod: PaymentMethod!
+   paymentStatus: PaymentStatus!
+   deliveryType: DeliveryType!
+   address: String
+   paymentUrl: String
 }
 
 type OrderDetail {
@@ -62,6 +68,14 @@ type AuthPayload {
    user: User!
 }
 
+type PaymentStart{
+   url: String!
+}
+
+type PaymentResult {
+   orderId: ID! paid: Boolean! status: String! 
+}
+
 enum Role {
    CLIENT
    ADMIN
@@ -71,6 +85,31 @@ enum OrderStatus {
    PENDING
    IN_PROCESS
    COMPLETED
+}
+
+enum PaymentMethod {
+   MERCADOPAGO
+   LINK
+   PAYPAL
+   TERMINAL
+   CASH
+}
+
+enum PaymentStatus {
+   PENDING
+   APPROVED
+   REJECTED
+   CANCELLED
+   REFUNDED
+}
+
+enum PaymentMethod {
+   MERCADOPAGO PAYPAL 
+}
+
+enum DeliveryType {
+   SHIPPING
+   PICKUP
 }
 
 enum AppointmentStatus {
@@ -91,22 +130,16 @@ input LoginInput {
    password: String!
 }
 
-# input UserInput {
-#    name: String!
-#    tel: String!
-#    email: String!
-#    password: String!
-#    role: Role!
-# }
-
 input OrderLineInput {
    idProduct: ID!
    amount: Int!
 }
 
 input OrderInput {
-   # idClient: ID!
    lines: [OrderLineInput!]!
+   paymentMethod: PaymentMethod!
+   deliveryType: DeliveryType!
+   address: String
 }
 
 input ProductInput {
@@ -173,4 +206,7 @@ type Mutation {
    updateAppointmentStatus(id: ID!, status: AppointmentStatus!): Appointment
    
    createService(data: ServiceInput!): Service!
+   startPayment(orderId: ID!, method: PaymentMethod!): PaymentStart!
+   confirmPayment(orderId: ID!, ref: String): PaymentResult!
 }
+

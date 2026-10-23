@@ -1,0 +1,73 @@
+---
+import type { AdminOrder, OrderStatus } from '@/domain/order/AdminOrder'
+import { lineSubtotal, nextOrderStatus, orderUnits } from '@/domain/order/AdminOrder'
+import { formatDate, formatPrice } from '../lib/format'
+import { buttonVariants } from '@/presentation/components/ui/button'
+import DataTable from './DataTable.astro'
+import StatusBadge from './StatusBadge.astro'
+
+interface Props {
+   orders: AdminOrder[]
+   filter?: string
+}
+
+const { orders, filter = '' } = Astro.props
+
+const actionLabels: Record<OrderStatus, string> = {
+   PENDING: 'Pendiente',
+   IN_PROCESS: 'Pasar a “En proceso”',
+   COMPLETED: 'Marcar como completado',
+}
+---
+
+{orders.length === 0 ? (
+   <p class="text-xs text-muted-foreground">No hay pedidos en esta vista.</p>
+) : (
+   <DataTable>
+      <thead>
+         <tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Estado</th><th>Acción</th></tr>
+      </thead>
+      <tbody>
+         {orders.map((order) => {
+            const next = nextOrderStatus(order.status)
+            return (
+               <tr class="align-top">
+                  <td class="font-bold">{order.id}</td>
+                  <td>{formatDate(order.date)}</td>
+                  <td>
+                     <div class="font-bold">{order.customer.name}</div>
+                     <div class="text-muted-foreground">{order.customer.email}</div>
+                     <div class="text-muted-foreground">{order.customer.tel}</div>
+                  </td>
+                  <td>
+                     <details>
+                        <summary class="cursor-pointer">{orderUnits(order)} pieza(s)</summary>
+                        <ul class="mt-1 flex flex-col gap-0.5">
+                           {order.lines.map((line) => (
+                              <li>{line.amount} × {line.productName} — {formatPrice(lineSubtotal(line))}</li>
+                           ))}
+                        </ul>
+                     </details>
+                  </td>
+                  <td>{formatPrice(order.total)}</td>
+                  <td><StatusBadge kind="order" status={order.status} /></td>
+                  <td>
+                     {next ? (
+                        <form method="post" data-confirm={`¿Cambiar el pedido ${order.id} a “${next === 'IN_PROCESS' ? 'En proceso' : 'Completado'}”?`}>
+                           <input type="hidden" name="id" value={order.id} />
+                           <input type="hidden" name="status" value={next} />
+                           <input type="hidden" name="estado" value={filter} />
+                           <button type="submit" class={buttonVariants({ variant: 'outline', size: 'sm' })}>
+                              {actionLabels[next]}
+                           </button>
+                        </form>
+                     ) : (
+                        <span class="text-muted-foreground">—</span>
+                     )}
+                  </td>
+               </tr>
+            )
+         })}
+      </tbody>
+   </DataTable>
+)}

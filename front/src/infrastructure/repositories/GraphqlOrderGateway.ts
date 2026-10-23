@@ -11,7 +11,12 @@ export class GraphqlOrderGateway implements OrderGateway {
       MUTATION_CREATE_ORDER,
       {
         // El cliente sale del token; solo viajan los renglones
-        data: { lines: order.lines.map((l) => ({ idProduct: l.productId, amount: l.amount })) },
+        data: {
+          lines: order.lines.map((l) => ({ idProduct: l.productId, amount: l.amount })),
+          paymentMethod: order.paymentMethod,
+          deliveryType: order.deliveryType,
+          address: order.deliveryType === 'SHIPPING' ? order.address : null,
+        },
       },
       { token }
     )

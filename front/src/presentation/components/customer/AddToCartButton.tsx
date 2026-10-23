@@ -1,4 +1,4 @@
-import { ShoppingCartIcon } from '@phosphor-icons/react'
+import { ShoppingCartIcon } from '@phosphor-icons/react/dist/csr/ShoppingCart'
 import type { CartProduct } from '@/domain/cart/Cart'
 import { addItemToCart } from '@/infrastructure/cart/zustandCartStore'
 import { Button } from '@/presentation/components/ui/button'

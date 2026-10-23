@@ -1,0 +1,47 @@
+---
+import { PUBLIC_MP_PUBLIC_KEY, PUBLIC_PAYPAL_CLIENT_ID } from 'astro:env/client'
+import type { TrackedOrder } from '@/domain/order/Payment'
+import { config } from '@/infrastructure/config'
+import OrderTracking from '@/presentation/components/customer/OrderTracking'
+import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
+
+// Página pública de seguimiento y pago: /pedido/CB-xxxxxxxxxxxx
+const referencia = Astro.params.referencia ?? ''
+if (!/^CB-[0-9a-f]{12}$/.test(referencia)) {
+   return new Response('Pedido no encontrado', { status: 404 })
+}
+
+let order: TrackedOrder | null = null
+let error = ''
+
+try {
+   const response = await fetch(new URL(`/pagos/estado/${referencia}`, config.graphqlUrl), {
+      signal: AbortSignal.timeout(15_000),
+   })
+   if (response.status === 404) return new Response('Pedido no encontrado', { status: 404 })
+   if (!response.ok) throw new Error()
+   order = (await response.json()) as TrackedOrder
+} catch {
+   error = 'No se pudo consultar el pedido. Intenta de nuevo en un momento.'
+}
+
+const user = Astro.locals.user
+---
+
+<BaseLayout title={`Pedido ${referencia} | ChecoBarber`}>
+   {order ? (
+      <OrderTracking
+         client:only="react"
+         initial={order}
+         isLoggedIn={Boolean(user)}
+         payerEmail={user?.email ?? ''}
+         mpPublicKey={PUBLIC_MP_PUBLIC_KEY}
+         paypalClientId={PUBLIC_PAYPAL_CLIENT_ID}
+      />
+   ) : (
+      <div class="p-10 text-center text-destructive">
+         <h3 class="font-bold">Error de conexión</h3>
+         <p>{error}</p>
+      </div>
+   )}
+</BaseLayout>

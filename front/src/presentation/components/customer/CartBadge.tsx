@@ -1,4 +1,4 @@
-import { ShoppingCartIcon } from '@phosphor-icons/react'
+import { ShoppingCartIcon } from '@phosphor-icons/react/dist/csr/ShoppingCart'
 import { useCartStore } from '@/infrastructure/cart/zustandCartStore'
 import { Badge } from '@/presentation/components/ui/badge'
 import { buttonVariants } from '@/presentation/components/ui/button'
