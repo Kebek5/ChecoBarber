@@ -1,11 +1,10 @@
 ---
-import { PUBLIC_MP_PUBLIC_KEY, PUBLIC_PAYPAL_CLIENT_ID } from 'astro:env/client'
+import { PUBLIC_PAYPAL_CLIENT_ID } from 'astro:env/client'
 import type { TrackedOrder } from '@/domain/order/Payment'
 import { config } from '@/infrastructure/config'
 import OrderTracking from '@/presentation/components/customer/OrderTracking'
 import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
 
-// Página pública de seguimiento y pago: /pedido/CB-xxxxxxxxxxxx
 const referencia = Astro.params.referencia ?? ''
 if (!/^CB-[0-9a-f]{12}$/.test(referencia)) {
    return new Response('Pedido no encontrado', { status: 404 })
@@ -34,9 +33,7 @@ const user = Astro.locals.user
          client:only="react"
          initial={order}
          isLoggedIn={Boolean(user)}
-         payerEmail={user?.email ?? ''}
-         mpPublicKey={PUBLIC_MP_PUBLIC_KEY}
-         paypalClientId={PUBLIC_PAYPAL_CLIENT_ID}
+         paypalClientId={PUBLIC_PAYPAL_CLIENT_ID ?? ''}
       />
    ) : (
       <div class="p-10 text-center text-destructive">

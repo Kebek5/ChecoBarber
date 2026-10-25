@@ -13,15 +13,9 @@ export interface PaymentMethodOption {
 
 export const PAYMENT_METHODS: readonly PaymentMethodOption[] = [
    {
-      id: 'MERCADOPAGO',
-      label: 'Tarjeta o tienda de conveniencia',
-      description: 'Crédito, débito, OXXO, 7-Eleven, Circle K, Soriana y más (Mercado Pago).',
-      pickupOnly: false,
-   },
-   {
       id: 'LINK',
-      label: 'Link de pago',
-      description: 'Genera un enlace de Mercado Pago que puedes pagar o compartir.',
+      label: 'Mercado Pago',
+      description: 'Tarjeta de crédito o débito, saldo de Mercado Pago, OXXO y más. Te llevamos a Mercado Pago para pagar.',
       pickupOnly: false,
    },
    {

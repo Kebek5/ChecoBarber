@@ -17,7 +17,6 @@ import { GraphqlAdminGateway } from '@/infrastructure/repositories/GraphqlAdminG
 import { GraphqlAuthGateway } from '@/infrastructure/repositories/GraphqlAuthGateway'
 import { GraphqlCatalogRepository } from '@/infrastructure/repositories/GraphqlCatalogRepository'
 import { GraphqlOrderGateway } from '@/infrastructure/repositories/GraphqlOrderGateway'
-import { GraphqlPaymentGateway } from '@/infrastructure/repositories/GraphqlPaymentGateway'
 import { UpdateUserRole } from '@/application/useCases/UpdateUserRole'
 
 const graphql = createGraphqlClient(config.graphqlUrl)
@@ -54,4 +53,3 @@ export const updateOrderStatus = new UpdateOrderStatus(adminGateway)
 export const listAdminAppointments = new ListAdminAppointments(adminGateway)
 export const updateAppointmentStatus = new UpdateAppointmentStatus(adminGateway)
 export const listUsers = new ListUsers(adminGateway)
-export const paymentGateway = new GraphqlPaymentGateway(graphql)
