@@ -1,5 +1,4 @@
 import { pool, query } from "./db.js";
-import { createMpCheckout, verifyMpPayment, createPaypalCheckout, capturePaypal } from "./payments.js";
 import { newReference, logEvent } from "./payments/orders.js";
 import {
    hashPassword, verifyPassword, signToken,
@@ -438,36 +437,6 @@ export const resolvers = {
          } finally {
             connection.release();
          }
-      },
-            startPayment: async (_, { orderId, method }, ctx) => {
-         const order = await ownOrder(orderId, requireAuth(ctx));
-         if (order.estado_pago === "pagado") throw userError("Este pedido ya está pagado.");
-         if (method === "MERCADOPAGO") {
-            const items = await query(
-               `SELECT p.id, p.nombre AS title, d.cantidad AS quantity, d.precio_unitario AS unit_price
-                  FROM detalle_pedido d JOIN producto p ON p.id = d.producto_id
-                 WHERE d.pedido_id = $1`, [order.id]);
-            const url = await createMpCheckout(order, items);
-            await query("UPDATE pedido SET metodo_pago = 'mercadopago' WHERE id = $1", [order.id]);
-            return { url };
-         }
-         const pp = await createPaypalCheckout(order);
-         await query("UPDATE pedido SET metodo_pago = 'paypal', pago_ref = $2 WHERE id = $1", [order.id, pp.id]);
-         return { url: pp.url };
-      },
-
-      confirmPayment: async (_, { orderId, ref }, ctx) => {
-         const order = await ownOrder(orderId, requireAuth(ctx));
-         if (order.estado_pago === "pagado") return { orderId, paid: true, status: "pagado" };
-         let paid = false;
-         if (order.metodo_pago === "mercadopago") paid = await verifyMpPayment(order, ref);
-         else if (order.metodo_pago === "paypal") paid = await capturePaypal(order);
-         if (paid) {
-            await query(
-               "UPDATE pedido SET estado_pago = 'pagado', pago_ref = COALESCE($2, pago_ref) WHERE id = $1",
-               [order.id, order.metodo_pago === "mercadopago" ? ref : null]);
-         }
-         return { orderId, paid, status: paid ? "pagado" : "pendiente" };
       },
 
       createAppointment: async (_, { data }, ctx) => {

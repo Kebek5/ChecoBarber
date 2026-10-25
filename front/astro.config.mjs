@@ -21,16 +21,11 @@ export default defineConfig({
         default: 'http://localhost:4000/',
       }),
 
-      PUBLIC_MP_PUBLIC_KEY: envField.string({
-        context: 'client',
-        access: 'public',
-        default: '',
-      }),
-
       PUBLIC_PAYPAL_CLIENT_ID: envField.string({
         context: 'client',
         access: 'public',
         default: '',
+        optional: true,
       }),
     },
   },
