@@ -1,6 +1,6 @@
 ---
 import type { Category } from '@/domain/catalog/Category'
-import type { ProductFormValues } from '@/presentation/lib/productForm'
+import type { ProductFormValues } from '../lib/productForm'
 import { buttonVariants } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
 
@@ -21,7 +21,7 @@ const areaClass =
 
    <div class="flex flex-col gap-1">
       <label for="name" class="text-xs font-bold">Nombre</label>
-      <Input id="name" name="name" required minlength={3} defaultValue={values.name} />
+      <Input id="name" name="name" required minLength={3} defaultValue={values.name} />
    </div>
 
    <div class="flex flex-col gap-1">
