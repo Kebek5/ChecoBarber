@@ -12,6 +12,11 @@ export default defineConfig({
 
   env: {
     schema: {
+      GRAPHQL_URL: envField.string({context: 'server', access: 'secret',}),
+
+      CLOUDINARY_CLOUD_NAME: envField.string({ context: 'server', access: 'secret' }),
+      CLOUDINARY_API_KEY: envField.string({ context: 'server', access: 'secret' }),
+      CLOUDINARY_API_SECRET: envField.string({ context: 'server', access: 'secret' }),
       GRAPHQL_URL: envField.string({
         context: 'server',
         access: 'secret',

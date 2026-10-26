@@ -4,9 +4,16 @@ import type { Category } from '@/domain/catalog/Category'
 interface Props {
   categories: Category[]
   activeCategoryId?: string | null
+  allHref?: string
+  categoryHref?: (id: string) => string
 }
 
-const { categories, activeCategoryId = null } = Astro.props
+const {
+  categories,
+  activeCategoryId = null,
+  allHref = '/',
+  categoryHref = (id: string) => `/categoria/${id}`,
+} = Astro.props
 
 const linkClass = (active: boolean) =>
   `block w-full rounded-lg px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#dcdcdc] ${active ? 'bg-[#dcdcdc]' : ''}`
@@ -16,13 +23,13 @@ const linkClass = (active: boolean) =>
   <h2 class="w-full text-xl font-bold tracking-[2px]">Categorías</h2>
   <ul class="flex w-full flex-col">
     <li>
-      <a href="/" class={linkClass(activeCategoryId === null)}>Todas las categorías</a>
+      <a href={allHref} class={linkClass(activeCategoryId === null)}>Todas las categorías</a>
     </li>
     {categories.map((category) => (
       <li>
         {/* Si ya está activa, al volver a darle clic se quita el filtro */}
         <a
-          href={activeCategoryId === category.id ? '/' : `/categoria/${category.id}`}
+          href={activeCategoryId === category.id ? allHref : categoryHref(category.id)}
           class={linkClass(activeCategoryId === category.id)}
         >
           {category.name}

@@ -9,6 +9,7 @@ import AdminLayout from '@/presentation/components/layout/AdminLayout.astro'
 import { buttonVariants } from '@/presentation/components/ui/button'
 import { toMessage } from '@/presentation/components/lib/adminError'
 import { emptyProductForm, productToForm, readProductForm, toProductInput } from '@/presentation/components/lib/productForm'
+import { uploadProductImage } from '@/infrastructure/images/cloudinary'
 
 const token = Astro.locals.token!
 const id = Astro.params.id ?? ''
@@ -38,7 +39,9 @@ if (Astro.request.method === 'POST' && product) {
          return Astro.redirect('/dashboard/productos?ok=eliminado')
       }
       values = readProductForm(form)
+      values.img = (await uploadProductImage(form)) ?? values.img
       await updateProduct.execute(token, id, toProductInput(values))
+      
       return Astro.redirect(`/dashboard/productos/${id}?ok=guardado`)
    } catch (err) {
       success = ''

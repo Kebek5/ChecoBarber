@@ -7,6 +7,7 @@ import ProductEditor from '@/presentation/components/admin/ProductEditor.astro'
 import AdminLayout from '@/presentation/components/layout/AdminLayout.astro'
 import { toMessage } from '@/presentation/components/lib/adminError'
 import { emptyProductForm, readProductForm, toProductInput } from '@/presentation/components/lib/productForm'
+import { uploadProductImage } from '@/infrastructure/images/cloudinary'
 
 const token = Astro.locals.token!
 
@@ -21,8 +22,10 @@ try {
 }
 
 if (Astro.request.method === 'POST') {
-   values = readProductForm(await Astro.request.formData())
+   const form = await Astro.request.formData()
+   values = readProductForm(form)
    try {
+      values.img = (await uploadProductImage(form)) ?? values.img
       await createProduct.execute(token, toProductInput(values))
       return Astro.redirect('/dashboard/productos?ok=creado')
    } catch (err) {
