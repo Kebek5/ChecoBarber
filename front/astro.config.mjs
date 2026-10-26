@@ -16,11 +16,11 @@ export default defineConfig({
 
   env: {
     schema: {
-      GRAPHQL_URL: envField.string({
-        context: 'server',
-        access: 'secret',
-        // default: 'http://localhost:4000/',
-      }),
+      GRAPHQL_URL: envField.string({context: 'server', access: 'secret',}),
+
+      CLOUDINARY_CLOUD_NAME: envField.string({ context: 'server', access: 'secret' }),
+      CLOUDINARY_API_KEY: envField.string({ context: 'server', access: 'secret' }),
+      CLOUDINARY_API_SECRET: envField.string({ context: 'server', access: 'secret' }),
 
       PUBLIC_PAYPAL_CLIENT_ID: envField.string({
         context: 'client',

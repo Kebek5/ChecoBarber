@@ -1,6 +1,6 @@
 ---
 import type { Category } from '@/domain/catalog/Category'
-import type { ProductFormValues } from '@/presentation/lib/productForm'
+import type { ProductFormValues } from '../lib/productForm'
 import { buttonVariants } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
 
@@ -16,12 +16,12 @@ const areaClass =
    'w-full border bg-transparent px-2.5 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring'
 ---
 
-<form method="post" class="flex max-w-xl flex-col gap-4">
+<form method="post" enctype="multipart/form-data" class="flex max-w-xl flex-col gap-4">
    <input type="hidden" name="intent" value="save" />
 
    <div class="flex flex-col gap-1">
       <label for="name" class="text-xs font-bold">Nombre</label>
-      <Input id="name" name="name" required minlength={3} defaultValue={values.name} />
+      <Input id="name" name="name" required minLength={3} defaultValue={values.name} />
    </div>
 
    <div class="flex flex-col gap-1">
@@ -50,10 +50,23 @@ const areaClass =
       </select>
    </div>
 
-   <div class="flex flex-col gap-1">
-      <label for="img" class="text-xs font-bold">URL de la imagen (opcional)</label>
-      <Input id="img" name="img" type="text" placeholder="https://..." defaultValue={values.img} />
-   </div>
+      <div class="flex flex-col gap-2">
+         <label for="imageFile" class="text-xs font-bold">Imagen del producto</label>
+         {values.img && (
+            <img src={values.img} alt="Imagen actual" class="h-32 w-32 border object-cover" />
+         )}
+         <input
+            id="imageFile"
+            name="imageFile"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/avif"
+            class="text-sm"
+         />
+         <p class="text-xs text-muted-foreground">
+            JPG, PNG, WebP o AVIF, máximo 5 MB. Si no eliges archivo se conserva la imagen actual.
+         </p>
+         <input type="hidden" name="img" value={values.img} />
+      </div>
 
    <div class="flex gap-2">
       <button type="submit" class={buttonVariants({ size: 'lg' })}>{submitLabel}</button>
