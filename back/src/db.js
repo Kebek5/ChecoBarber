@@ -9,6 +9,10 @@ export const pool = new pg.Pool({
    password: process.env.DB_PASSWORD || "",
    database: process.env.DB_NAME || "p26_ecommerce",
    max: 10,
+
+   ssl: {
+      rejectUnauthorized: false,
+   },
 });
 
 

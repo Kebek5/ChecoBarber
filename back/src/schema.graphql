@@ -103,10 +103,6 @@ enum PaymentStatus {
    REFUNDED
 }
 
-enum PaymentMethod {
-   MERCADOPAGO PAYPAL 
-}
-
 enum DeliveryType {
    SHIPPING
    PICKUP
