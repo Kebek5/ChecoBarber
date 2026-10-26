@@ -183,6 +183,7 @@ type Query {
 
    services(limit: Int, offset: Int): [Service!]!
    service(id: ID!): Service
+      availableHours(date: String!, idService: ID!): [String!]!
 }
 
 type Mutation {

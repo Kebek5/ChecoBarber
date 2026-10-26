@@ -17,6 +17,7 @@ import { connectMongo } from "./mongo.js";
 import { WebSocketServer } from "ws";
 import { useServer } from "graphql-ws/use/ws";
 import { makeExecutableSchema } from "@graphql-tools/schema";
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const typeDefs = readFileSync(join(__dirname, "schema.graphql"), "utf-8");
 

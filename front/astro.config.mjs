@@ -1,4 +1,3 @@
-
 import { defineConfig, envField } from 'astro/config';
 import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
@@ -38,6 +37,20 @@ export default defineConfig({
         default: '',
         optional: true,
       }),
+
+      PUBLIC_GOOGLE_MAPS_KEY: envField.string({
+        context: 'client',
+        access: 'public',
+        default: '',
+        optional: true,
+      }),
+
+      PUBLIC_SHOP_MAP_QUERY: envField.string({
+        context: 'client',
+        access: 'public',
+        default: 'ChecoBarber',
+        optional: true,
+      }),
     },
   },
 
@@ -50,4 +63,3 @@ export default defineConfig({
     },
   },
 });
-``

@@ -1,0 +1,26 @@
+---
+import { PUBLIC_GOOGLE_MAPS_KEY, PUBLIC_SHOP_MAP_QUERY } from 'astro:env/client'
+
+const q = encodeURIComponent(PUBLIC_SHOP_MAP_QUERY)
+const embed = `https://www.google.com/maps/embed/v1/place?key=${PUBLIC_GOOGLE_MAPS_KEY}&q=${q}`
+const directions = `https://www.google.com/maps/dir/?api=1&destination=${q}`
+---
+
+<section class="flex flex-col gap-3">
+   <h2 class="text-lg font-bold">Dónde estamos</h2>
+   {PUBLIC_GOOGLE_MAPS_KEY ? (
+      <iframe
+         title="Ubicación de ChecoBarber"
+         src={embed}
+         class="h-80 w-full border"
+         loading="lazy"
+         referrerpolicy="no-referrer-when-downgrade"
+         allowfullscreen
+      ></iframe>
+   ) : (
+      <p class="border p-4 text-xs text-muted-foreground">El mapa no está configurado todavía.</p>
+   )}
+   <a href={directions} target="_blank" rel="noopener noreferrer" class="text-xs font-bold underline">
+      Cómo llegar
+   </a>
+</section>
