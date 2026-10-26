@@ -31,7 +31,12 @@ const title = search
    <>
 
       <div id="catalogo" class="mx-auto flex w-full max-w-[1600px] scroll-mt-28 flex-col items-start md:flex-row">
-         <CategorySidebar categories={categories} activeCategoryId={activeCategoryId} />
+         <CategorySidebar
+            categories={categories}
+            activeCategoryId={activeCategoryId}
+            allHref="/dashboard/productos"
+            categoryHref={(id) => `/dashboard/productos?categoria=${id}`}
+         />
 
          <section class="w-full min-w-0 flex-1 p-7.5">
          <div class="mb-6 flex items-center justify-between gap-5">

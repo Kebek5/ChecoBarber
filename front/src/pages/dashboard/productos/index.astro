@@ -10,6 +10,7 @@ import { buttonVariants } from '@/presentation/components/ui/button'
 
 const search = (Astro.url.searchParams.get('q') ?? '').trim()
 const term = search.toLowerCase()
+const activeCategoryId = Astro.url.searchParams.get('categoria') || null
 
 const okMessages: Record<string, string> = {
    creado: 'Producto creado.',
@@ -24,10 +25,16 @@ let error = ''
 try {
    const [categoriesData, productsData] = await Promise.all([getCategories.execute(), listProducts.execute()])
    categories = categoriesData
-   products = term
-      ?  productsData.filter((product) =>
-            product.name.toLowerCase().includes(term) || (product.description && product.description.toLowerCase().includes(term))
-         ): productsData
+
+   products = productsData.filter((product) => {
+      const matchesCategory = !activeCategoryId || String(product.category?.id) === activeCategoryId
+
+      const matchesSearch = !term ||
+         product.name.toLowerCase().includes(term) || (product.description?.toLowerCase().includes(term) ?? false)
+
+      return matchesCategory && matchesSearch
+   })
+   
 } catch (err) {
    error = err instanceof Error ? err.message : 'Error de conexión.'
 }
