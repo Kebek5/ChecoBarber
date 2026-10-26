@@ -18,6 +18,8 @@ import { GraphqlAuthGateway } from '@/infrastructure/repositories/GraphqlAuthGat
 import { GraphqlCatalogRepository } from '@/infrastructure/repositories/GraphqlCatalogRepository'
 import { GraphqlOrderGateway } from '@/infrastructure/repositories/GraphqlOrderGateway'
 import { UpdateUserRole } from '@/application/useCases/UpdateUserRole'
+import { BookAppointment, GetAvailableHours, ListMyAppointments, ListServices } from '@/application/useCases/Appointments'
+import { GraphqlAppointmentGateway } from '@/infrastructure/repositories/GraphqlAppointmentGateway'
 
 const graphql = createGraphqlClient(config.graphqlUrl)
 
@@ -43,7 +45,11 @@ export const getDashboardSummary = new GetDashboardSummary(
    adminGateway,
    catalogRepository
 )
-
+const appointmentGateway = new GraphqlAppointmentGateway(graphql)
+export const listServices = new ListServices(appointmentGateway)
+export const getAvailableHours = new GetAvailableHours(appointmentGateway)
+export const bookAppointment = new BookAppointment(appointmentGateway)
+export const listMyAppointments = new ListMyAppointments(appointmentGateway)
 export const createProduct = new CreateProduct(adminGateway)
 export const updateProduct = new UpdateProduct(adminGateway)
 export const deleteProduct = new DeleteProduct(adminGateway)
