@@ -14,7 +14,9 @@ import { userFromRequest } from "./auth.js";
 import { paymentsRouter } from "./payments/routes.js";
 import { webhooksRouter } from "./payments/webhooks.js";
 import { connectMongo } from "./mongo.js";
-
+import { WebSocketServer } from "ws";
+import { useServer } from "graphql-ws/use/ws";
+import { makeExecutableSchema } from "@graphql-tools/schema";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const typeDefs = readFileSync(join(__dirname, "schema.graphql"), "utf-8");
 
@@ -22,10 +24,26 @@ const app = express();
 const httpServer = http.createServer(app);
 await connectMongo();
 
+const schema = makeExecutableSchema({ typeDefs, resolvers });
+
+// Websocket en /graphql (las consultas normales siguen en "/")
+const wsServer = new WebSocketServer({ server: httpServer, path: "/graphql" });
+const wsCleanup = useServer({ schema }, wsServer);
+
 const server = new ApolloServer({
-   typeDefs,
-   resolvers,
-   plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+   schema,
+   plugins: [
+      ApolloServerPluginDrainHttpServer({ httpServer }),
+      {
+         async serverWillStart() {
+            return {
+               async drainServer() {
+                  await wsCleanup.dispose();
+               },
+            };
+         },
+      },
+   ],
 });
 await server.start();
 

@@ -1,11 +1,8 @@
-import { defineConfig, envField } from 'astro/config'
 
+import { defineConfig, envField } from 'astro/config';
 import react from '@astrojs/react';
-
 import tailwindcss from '@tailwindcss/vite';
-
 import path from 'node:path';
-
 import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
@@ -21,6 +18,17 @@ export default defineConfig({
       CLOUDINARY_CLOUD_NAME: envField.string({ context: 'server', access: 'secret' }),
       CLOUDINARY_API_KEY: envField.string({ context: 'server', access: 'secret' }),
       CLOUDINARY_API_SECRET: envField.string({ context: 'server', access: 'secret' }),
+      GRAPHQL_URL: envField.string({
+        context: 'server',
+        access: 'secret',
+        default: 'http://localhost:4000/',
+      }),
+
+      PUBLIC_GRAPHQL_WS_URL: envField.string({
+        context: 'client',
+        access: 'public',
+        default: 'ws://localhost:4000/graphql',
+      }),
 
       PUBLIC_PAYPAL_CLIENT_ID: envField.string({
         context: 'client',
@@ -45,5 +53,6 @@ export default defineConfig({
         '@': path.resolve('./src'),
       },
     },
-  }
+  },
 });
+``

@@ -26,6 +26,7 @@
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.11.0",
     "cn": "^0.4.0",
+    "graphql-ws": "^6.4.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "shadcn": "^1.0.0",
