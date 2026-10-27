@@ -68,12 +68,41 @@ type AuthPayload {
    user: User!
 }
 
-type PaymentStart{
-   url: String!
+type StatPoint {
+   label: String!
+   value: Float!
 }
 
-type PaymentResult {
-   orderId: ID! paid: Boolean! status: String! 
+type DailySales {
+   date: String!
+   shop: Float!
+   appointments: Float!
+   orders: Int!
+}
+
+type MonthlySales {
+   month: String!
+   shop: Float!
+   appointments: Float!
+}
+
+type HeatCell {
+   weekday: Int!
+   hour: Int!
+   count: Int!
+}
+
+type AdminStats {
+   days: Int!
+   salesByDay: [DailySales!]!
+   salesByMonth: [MonthlySales!]!
+   revenueByCategory: [StatPoint!]!
+   ordersByPaymentMethod: [StatPoint!]!
+   ordersByPaymentStatus: [StatPoint!]!
+   appointmentsByWeekday: [StatPoint!]!
+   appointmentHeatmap: [HeatCell!]!
+   revenueByService: [StatPoint!]!
+   topProductsPaid: [StatPoint!]!
 }
 
 enum Role {
@@ -183,6 +212,9 @@ type Query {
 
    services(limit: Int, offset: Int): [Service!]!
    service(id: ID!): Service
+      availableHours(date: String!, idService: ID!): [String!]!
+
+   adminStats(days: Int): AdminStats!
 }
 
 type Mutation {
@@ -202,8 +234,7 @@ type Mutation {
    updateAppointmentStatus(id: ID!, status: AppointmentStatus!): Appointment
    
    createService(data: ServiceInput!): Service!
-   startPayment(orderId: ID!, method: PaymentMethod!): PaymentStart!
-   confirmPayment(orderId: ID!, ref: String): PaymentResult!
+   updateUserRole(id: ID!, role: Role!): User
 }
 type Subscription {
    productCreated: Product!

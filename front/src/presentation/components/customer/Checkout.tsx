@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { PAYMENT_METHODS, type DeliveryType, type PaymentMethod } from '@/domain/order/Payment'
 import { useCartStore } from '@/infrastructure/cart/zustandCartStore'
-import { paymentsApi } from '@/infrastructure/payments/paymentsApi'
 import { Badge } from '@/presentation/components/ui/badge'
 import { Button, buttonVariants } from '@/presentation/components/ui/button'
 import { Card } from '@/presentation/components/ui/card'
@@ -32,7 +31,7 @@ export default function Checkout({ userName, userEmail, userTel }: CheckoutProps
   const totalCart = useCartStore((state) => state.getTotalPrice())
 
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('SHIPPING')
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('LINK')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('MERCADOPAGO')
   const [address, setAddress] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -42,7 +41,7 @@ export default function Checkout({ userName, userEmail, userTel }: CheckoutProps
   const changeDelivery = (type: DeliveryType) => {
     setDeliveryType(type)
     if (type === 'SHIPPING' && (paymentMethod === 'TERMINAL' || paymentMethod === 'CASH')) {
-      setPaymentMethod('LINK')
+      setPaymentMethod('MERCADOPAGO')
     }
   }
 
@@ -76,22 +75,7 @@ export default function Checkout({ userName, userEmail, userTel }: CheckoutProps
       clearCart()
       const trackingUrl = `/pedido/${result.reference}`
 
-      // 2. Mercado Pago (Checkout Pro): generar el link y redirigir
-      if (paymentMethod === 'LINK') {
-        try {
-          const { url } = await paymentsApi.post<{ url: string }>('mercadopago/link', {
-            referencia: result.reference,
-          })
-          window.location.href = url
-          return
-        } catch {
-          // Si falla, el cliente puede reintentar desde la página del pedido
-          window.location.href = trackingUrl
-          return
-        }
-      }
-
-      // 3. PayPal, terminal y efectivo se atienden en la página del pedido
+      // 2. El pago se hace en la página del pedido: Mercado Pago (Checkout API), PayPal, terminal o efectivo
       window.location.href = trackingUrl
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ocurrió un error inesperado al procesar tu pedido.')

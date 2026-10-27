@@ -15,8 +15,7 @@ import {
 } from "./orders.js";
 import {
    cancelPointOrder,
-   createBrickPayment,
-   createPaymentLink,
+   createCheckoutApiPayment,
    createPointOrder,
    listTerminals,
    setTerminalPdvMode,
@@ -58,19 +57,21 @@ paymentsRouter.get("/estado/:referencia", async (req, res) => {
    res.json(await publicOrderView(pedido));
 });
 
-// ---------- Mercado Pago: Payment Brick (tarjeta y tiendas de conveniencia) ----------
+// ---------- Mercado Pago: Checkout API (tarjeta y tiendas de conveniencia) ----------
 
-// POST /pagos/mercadopago/pago  { referencia, formData }
+// POST /pagos/mercadopago/pago  { referencia, formData, deviceId? }
 paymentsRouter.post("/mercadopago/pago", async (req, res) => {
    const user = requireUser(req);
    const pedido = await loadOwnedOrder(req.body?.referencia, user);
    assertPayable(pedido, ["mercadopago"]);
 
-   const payment = await createBrickPayment({
+   const payment = await createCheckoutApiPayment({
       pedido,
+      lines: await getOrderLines(pedido.id),
       formData: req.body?.formData,
       description: describe(pedido),
       fallbackEmail: await userEmail(pedido.cliente_id),
+      deviceId: typeof req.body?.deviceId === "string" ? req.body.deviceId.slice(0, 200) : undefined,
    });
 
    const result = await applyMercadoPagoPayment(payment, "pago_creado");
@@ -82,29 +83,6 @@ paymentsRouter.post("/mercadopago/pago", async (req, res) => {
       tipo: payment.payment_type_id, // credit_card, debit_card, ticket
       ticketUrl: ticketUrlOf(payment),
    });
-});
-
-// ---------- Mercado Pago: link de pago rastreable (Checkout Pro) ----------
-
-// POST /pagos/mercadopago/link  { referencia }
-paymentsRouter.post("/mercadopago/link", async (req, res) => {
-   const user = requireUser(req);
-   const pedido = await loadOwnedOrder(req.body?.referencia, user);
-   assertPayable(pedido, ["link"]);
-
-   // Si ya se generó, se reutiliza el mismo link
-   if (pedido.url_pago && pedido.proveedor_pago === "mercadopago") {
-      return res.json({ referencia: pedido.referencia, url: pedido.url_pago });
-   }
-
-   const link = await createPaymentLink({
-      pedido,
-      lines: await getOrderLines(pedido.id),
-      payerEmail: await userEmail(pedido.cliente_id),
-   });
-   await savePaymentAttempt(pedido.id, { proveedor: "mercadopago", url: link.url });
-   await logEvent(pedido.id, "mercadopago", "link_generado", "pendiente", { preference_id: link.id });
-   res.json({ referencia: pedido.referencia, url: link.url });
 });
 
 // ---------- PayPal ----------

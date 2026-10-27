@@ -1,0 +1,106 @@
+---
+import { fmtAxis, fmtValue, niceMax, type Series } from './chartUtils'
+
+interface Props {
+   labels: string[] // etiqueta corta del eje X
+   hints?: string[] // texto completo para el tooltip (por defecto, labels)
+   series: Series[]
+   money?: boolean
+   caption: string
+   width?: number
+   height?: number
+}
+
+const { labels, hints = labels, series, money = false, caption, width = 640, height = 230 } = Astro.props
+
+const W = width
+const H = height
+const M = { top: 12, right: 14, bottom: 26, left: 48 }
+const innerW = W - M.left - M.right
+const innerH = H - M.top - M.bottom
+const n = labels.length
+
+const rawMax = Math.max(...series.flatMap((s) => s.values), 0)
+const total = series.reduce((sum, s) => sum + s.values.reduce((a, b) => a + b, 0), 0)
+const max = niceMax(rawMax)
+const TICKS = 4
+const xAt = (i: number) => M.left + (n <= 1 ? innerW / 2 : (i / (n - 1)) * innerW)
+const yAt = (v: number) => M.top + innerH - (v / max) * innerH
+const step = n <= 1 ? innerW : innerW / (n - 1)
+const every = Math.ceil(n / 7)
+
+const linePath = (values: number[]) => values.map((v, i) => `${i === 0 ? 'M' : 'L'}${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`).join(' ')
+const areaPath = (values: number[]) =>
+   `${linePath(values)} L${xAt(n - 1).toFixed(1)},${yAt(0)} L${xAt(0).toFixed(1)},${yAt(0)} Z`
+---
+
+{total === 0 ? (
+   <p class="py-10 text-center text-xs text-muted-foreground">Todavía no hay datos en este periodo.</p>
+) : (
+   <figure>
+      {series.length > 1 && (
+         <ul class="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+            {series.map((s) => (
+               <li class="flex items-center gap-1.5">
+                  <span class="inline-block h-0.5 w-4" style={`background:${s.color}`}></span>
+                  <span>{s.name}</span>
+                  <strong class="text-muted-foreground">{fmtValue(s.values.reduce((a, b) => a + b, 0), money)}</strong>
+               </li>
+            ))}
+         </ul>
+      )}
+
+      <svg viewBox={`0 0 ${W} ${H}`} class="h-auto w-full" role="img" aria-label={caption}>
+         {Array.from({ length: TICKS + 1 }, (_, t) => {
+            const v = (max / TICKS) * t
+            return (
+               <g>
+                  <line x1={M.left} x2={W - M.right} y1={yAt(v)} y2={yAt(v)} style="stroke:var(--viz-grid)" stroke-width="1" />
+                  <text x={M.left - 8} y={yAt(v) + 3} text-anchor="end" class="fill-muted-foreground" font-size="10">{fmtAxis(v, money)}</text>
+               </g>
+            )
+         })}
+
+         {labels.map((label, i) => (
+            (i % every === 0 || i === n - 1) && (
+               <text x={xAt(i)} y={H - 8} text-anchor="middle" class="fill-muted-foreground" font-size="10">{label}</text>
+            )
+         ))}
+
+         {series.map((s, si) => (
+            <g>
+               {series.length === 1 && <path d={areaPath(s.values)} style={`fill:${s.color}`} fill-opacity="0.1" />}
+               <path d={linePath(s.values)} fill="none" style={`stroke:${s.color}`} stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+               <circle cx={xAt(n - 1)} cy={yAt(s.values[n - 1] ?? 0)} r="4" style={`fill:${s.color};stroke:var(--viz-surface)`} stroke-width="2" />
+            </g>
+         ))}
+
+         {labels.map((_, i) => (
+            <g class="group">
+               <title>{hints[i]}{series.map((s) => `\n${s.name}: ${fmtValue(s.values[i] ?? 0, money)}`).join('')}</title>
+               <rect x={xAt(i) - step / 2} y={M.top} width={step} height={innerH} fill="transparent" />
+               <line x1={xAt(i)} x2={xAt(i)} y1={M.top} y2={M.top + innerH} style="stroke:var(--viz-grid)" stroke-width="1" class="opacity-0 group-hover:opacity-100" />
+               {series.map((s) => (
+                  <circle cx={xAt(i)} cy={yAt(s.values[i] ?? 0)} r="4" style={`fill:${s.color};stroke:var(--viz-surface)`} stroke-width="2" class="opacity-0 group-hover:opacity-100" />
+               ))}
+            </g>
+         ))}
+      </svg>
+
+      <details class="mt-2 text-xs">
+         <summary class="cursor-pointer text-muted-foreground">Ver tabla de datos</summary>
+         <div class="mt-2 max-h-56 overflow-auto">
+            <table class="w-full text-left">
+               <thead>
+                  <tr><th class="pr-3">Fecha</th>{series.map((s) => <th class="pr-3">{s.name}</th>)}</tr>
+               </thead>
+               <tbody>
+                  {hints.map((hint, i) => (
+                     <tr><td class="pr-3">{hint}</td>{series.map((s) => <td class="pr-3">{fmtValue(s.values[i] ?? 0, money)}</td>)}</tr>
+                  ))}
+               </tbody>
+            </table>
+         </div>
+      </details>
+   </figure>
+)}

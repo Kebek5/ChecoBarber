@@ -41,7 +41,7 @@ const title = search
           <h2 class="text-2xl font-bold">{title}</h2>
         </div>
 
-        <div class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-6">
+        <div id="product-grid" class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-6">
           {products.length > 0 ? (
             products.map((product) => <ProductCard product={product} />)
           ) : (

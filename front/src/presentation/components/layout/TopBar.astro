@@ -36,6 +36,8 @@ const q = Astro.url.searchParams.get('q') ?? ''
   </form>
 
   <nav class="ml-auto flex items-center gap-3">
+      <a href="/citas" class={buttonVariants({ variant: 'ghost', size: 'lg' })}>Agendar cita</a>
+    {user && <a href="/mis-compras" class={buttonVariants({ variant: 'ghost', size: 'lg' })}>Mis compras</a>}
     <CartBadge client:only="react">
       <a slot="fallback" href="/carrito" class={buttonVariants({ variant: 'outline', size: 'lg' })}>
         <ShoppingCartIcon weight="bold" />

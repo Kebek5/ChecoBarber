@@ -58,6 +58,32 @@ export const MUTATION_CREATE_ORDER = /* GraphQL */ `
   }
 `
 
+export const QUERY_MY_ORDERS = /* GraphQL */ `
+  query MisCompras {
+    orders {
+      id
+      date
+      total
+      status
+      reference
+      paymentMethod
+      paymentStatus
+      deliveryType
+      address
+      lines {
+        id
+        amount
+        unitPrice
+        product {
+          id
+          name
+          img
+        }
+      }
+    }
+  }
+`
+
 // Catálogo
 export const QUERY_CATEGORIES = /* GraphQL */ `
   query Categorias {
@@ -117,25 +143,6 @@ export const QUERY_PRODUCT_BY_ID = /* GraphQL */ `
         id
         name
       }
-    }
-  }
-`
-
-// Pagos
-export const MUTATION_START_PAYMENT = /* GraphQL */ `
-  mutation IniciarPago($orderId: ID!, $method: PaymentMethod!) {
-    startPayment(orderId: $orderId, method: $method) {
-      url
-    }
-  }
-`
-
-export const MUTATION_CONFIRM_PAYMENT = /* GraphQL */ `
-  mutation ConfirmarPago($orderId: ID!, $ref: String) {
-    confirmPayment(orderId: $orderId, ref: $ref) {
-      orderId
-      paid
-      status
     }
   }
 `

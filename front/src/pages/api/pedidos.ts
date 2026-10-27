@@ -3,7 +3,7 @@ import { BackendUnavailableError, UnauthenticatedError } from '@/application/err
 import { placeOrder } from '@/infrastructure/container'
 import type { DeliveryType, PaymentMethod } from '@/domain/order/Payment'
 
-const PAYMENT_METHODS: PaymentMethod[] = ['MERCADOPAGO', 'LINK', 'PAYPAL', 'TERMINAL', 'CASH']
+const PAYMENT_METHODS: PaymentMethod[] = ['MERCADOPAGO', 'PAYPAL', 'TERMINAL', 'CASH']
 const DELIVERY_TYPES: DeliveryType[] = ['SHIPPING', 'PICKUP']
 
 const json = (data: unknown, status = 200) =>

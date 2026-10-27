@@ -24,7 +24,7 @@ const max = Math.max(...data.map((p) => p.value), 0)
                <span class="font-bold">{fmt(p.value)}</span>
             </div>
             <div class="h-2 bg-muted">
-               <div class="h-full bg-chart-3" style={`width:${(p.value / max) * 100}%`}></div>
+               <div class="h-full" style={`width:${(p.value / max) * 100}%;background:var(--viz-1)`}></div>
             </div>
          </li>
       ))}

@@ -8,10 +8,13 @@ export const formatDate = (iso: string) => {
    return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString('es-MX', { dateStyle: 'medium' })
 }
 
-// Fecha local de hoy en formato YYYY-MM-DD
-export const todayISO = () => {
-   const now = new Date()
-   const month = String(now.getMonth() + 1).padStart(2, '0')
-   const day = String(now.getDate()).padStart(2, '0')
-   return `${now.getFullYear()}-${month}-${day}`
-}
+// Fecha de hoy (YYYY-MM-DD) en la zona horaria de la barbería. En el servidor (UTC) la fecha local
+// ya es "mañana" desde las 18:00 de México, y eso rompía "hoy" en citas y en el dashboard.
+const SHOP_TZ = 'America/Mexico_City'
+const todayFormatter = new Intl.DateTimeFormat('en-CA', {
+   timeZone: SHOP_TZ,
+   year: 'numeric',
+   month: '2-digit',
+   day: '2-digit',
+})
+export const todayISO = () => todayFormatter.format(new Date())

@@ -1,0 +1,156 @@
+---
+import { listMyOrders } from '@/infrastructure/container'
+import {
+   PURCHASE_FILTERS,
+   PURCHASE_FILTER_LABEL,
+   isPurchaseFilter,
+   matchesFilter,
+   needsPayment,
+   progressLabel,
+   totalSpent,
+   unitsOf,
+   type MyOrder,
+} from '@/domain/order/MyOrder'
+import { PAYMENT_METHODS } from '@/domain/order/Payment'
+import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
+import Notice from '@/presentation/components/admin/Notice.astro'
+import StatCard from '@/presentation/components/admin/StatCard.astro'
+import StatusBadge from '@/presentation/components/admin/StatusBadge.astro'
+import { buttonVariants } from '@/presentation/components/ui/button'
+import { toMessage } from '@/presentation/components/lib/adminError'
+import { formatDate, formatPrice } from '@/presentation/components/lib/format'
+
+const token = Astro.locals.token!
+
+const rawFilter = Astro.url.searchParams.get('estado') ?? 'ALL'
+const filter = isPurchaseFilter(rawFilter) ? rawFilter : 'ALL'
+
+let orders: MyOrder[] = []
+let error = ''
+try {
+   orders = await listMyOrders.execute(token)
+} catch (err) {
+   error = toMessage(err, 'No se pudieron cargar tus compras.')
+}
+
+const visible = orders.filter((order) => matchesFilter(order, filter))
+const countOf = (f: (typeof PURCHASE_FILTERS)[number]) => orders.filter((order) => matchesFilter(order, f)).length
+
+const methodLabel = (order: MyOrder) =>
+   order.paymentMethod === 'LINK'
+      ? 'Link de pago Mercado Pago'
+      : (PAYMENT_METHODS.find((m) => m.id === order.paymentMethod)?.label ?? order.paymentMethod)
+
+const lineLabel = (order: MyOrder) => {
+   const names = order.lines.map((line) => line.product?.name ?? 'Producto').slice(0, 2)
+   const extra = order.lines.length - names.length
+   return names.join(', ') + (extra > 0 ? ` y ${extra} más` : '')
+}
+---
+
+<BaseLayout title="Mis compras | ChecoBarber">
+   <div class="mx-auto flex w-full max-w-300 flex-col gap-8 p-6">
+      <header>
+         <h1 class="text-2xl font-bold">Mis compras</h1>
+         <p class="mt-1 text-sm text-muted-foreground">Tus pedidos, su estado de pago y su seguimiento en un solo lugar.</p>
+      </header>
+
+      <Notice error={error} />
+
+      {orders.length > 0 && (
+         <div class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
+            <StatCard label="Compras" value={orders.length} />
+            <StatCard label="Artículos pedidos" value={orders.reduce((sum, order) => sum + unitsOf(order), 0)} />
+            <StatCard label="Total pagado" value={formatPrice(totalSpent(orders))} />
+            <StatCard
+               label="Por pagar"
+               value={countOf('TO_PAY')}
+               href={countOf('TO_PAY') > 0 ? '/mis-compras?estado=TO_PAY' : undefined}
+            />
+         </div>
+      )}
+
+      <nav aria-label="Filtrar compras" class="flex flex-wrap gap-2">
+         {PURCHASE_FILTERS.map((f) => (
+            <a
+               href={f === 'ALL' ? '/mis-compras' : `/mis-compras?estado=${f}`}
+               aria-current={filter === f ? 'page' : undefined}
+               class={`border px-3 py-1.5 text-xs ${filter === f ? 'bg-foreground font-bold text-background' : 'hover:bg-muted'}`}
+            >
+               {PURCHASE_FILTER_LABEL[f]} ({countOf(f)})
+            </a>
+         ))}
+      </nav>
+
+      {visible.length === 0 ? (
+         <div class="flex flex-col items-start gap-3 border p-6">
+            <p class="text-sm text-muted-foreground">
+               {orders.length === 0 ? 'Todavía no has hecho ninguna compra.' : 'No tienes compras en esta categoría.'}
+            </p>
+            <a href="/" class={buttonVariants({ size: 'lg' })}>Ir a la tienda</a>
+         </div>
+      ) : (
+         <ul class="flex flex-col gap-4">
+            {visible.map((order) => (
+               <li class="border p-4">
+                  <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
+                     <div>
+                        <div class="text-sm font-bold">Pedido {order.reference}</div>
+                        <div class="text-xs text-muted-foreground">
+                           {formatDate(order.date)} · {methodLabel(order)} ·{' '}
+                           {order.deliveryType === 'PICKUP' ? 'Recoger en la barbería' : 'Envío a domicilio'}
+                        </div>
+                     </div>
+                     <div class="flex items-center gap-2">
+                        <StatusBadge kind="payment" status={order.paymentStatus} />
+                        <span class="text-xs font-bold">{progressLabel(order)}</span>
+                     </div>
+                  </div>
+
+                  <ul class="mb-3 flex flex-col gap-2">
+                     {order.lines.map((line) => (
+                        <li class="flex items-center gap-3 text-xs">
+                           <div class="relative size-12 shrink-0 bg-muted">
+                              {line.product?.img && (
+                                 <img
+                                    src={line.product.img}
+                                    alt={line.product.name}
+                                    class="absolute inset-0 size-full object-contain"
+                                    loading="lazy"
+                                    onerror="this.remove()"
+                                 />
+                              )}
+                           </div>
+                           <div class="min-w-0 flex-1">
+                              <div class="truncate font-medium">{line.product?.name ?? 'Producto eliminado'}</div>
+                              <div class="text-muted-foreground">{line.amount} × {formatPrice(line.unitPrice)}</div>
+                           </div>
+                           <strong class="whitespace-nowrap">{formatPrice(line.amount * line.unitPrice)}</strong>
+                        </li>
+                     ))}
+                  </ul>
+
+                  {order.address && (
+                     <p class="mb-3 text-xs text-muted-foreground">Dirección de entrega: {order.address}</p>
+                  )}
+
+                  <div class="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
+                     <div class="text-xs text-muted-foreground" title={lineLabel(order)}>
+                        {unitsOf(order)} {unitsOf(order) === 1 ? 'artículo' : 'artículos'} · Total{' '}
+                        <strong class="text-base text-foreground">{formatPrice(order.total)}</strong>
+                     </div>
+                     <div class="flex gap-2">
+                        {needsPayment(order) && order.paymentMethod !== 'TERMINAL' && order.paymentMethod !== 'CASH' && order.paymentMethod !== 'LINK' && (
+                           <a href={`/pedido/${order.reference}`} class={buttonVariants({ size: 'lg' })}>Pagar ahora</a>
+                        )}
+                        <a href={`/pedido/${order.reference}`} class={buttonVariants({ variant: 'outline', size: 'lg' })}>
+                           Ver seguimiento
+                        </a>
+                     </div>
+                  </div>
+               </li>
+            ))}
+         </ul>
+      )}
+   </div>
+</BaseLayout>

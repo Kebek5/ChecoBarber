@@ -70,3 +70,20 @@ export const MUTATION_UPDATE_USER_ROLE = /* GraphQL */ `
       updateUserRole(id: $id, role: $role) { id name tel email role }
    }
 `
+
+export const QUERY_ADMIN_STATS = /* GraphQL */ `
+   query EstadisticasAdmin($days: Int) {
+      adminStats(days: $days) {
+         days
+         salesByDay { date shop appointments orders }
+         salesByMonth { month shop appointments }
+         revenueByCategory { label value }
+         ordersByPaymentMethod { label value }
+         ordersByPaymentStatus { label value }
+         appointmentsByWeekday { label value }
+         appointmentHeatmap { weekday hour count }
+         revenueByService { label value }
+         topProductsPaid { label value }
+      }
+   }
+`

@@ -1,9 +1,11 @@
 import type {
+   AdminStatsGateway,
    AdminAppointmentGateway,
    AdminCatalogGateway,
    AdminOrderGateway,
    AdminUserGateway,
 } from '@/application/ports/AdminGateway'
+import type { AdminStats } from '@/domain/admin/AdminStats'
 import type { Role, User } from '@/domain/auth/User'
 import type { Appointment, AppointmentStatus } from '@/domain/appointment/Appointment'
 import type { Product } from '@/domain/catalog/Product'
@@ -20,6 +22,7 @@ import {
    QUERY_ADMIN_APPOINTMENTS,
    QUERY_ADMIN_ORDER_BY_ID,
    QUERY_ADMIN_ORDERS,
+   QUERY_ADMIN_STATS,
    QUERY_ADMIN_USERS,
 } from '@/infrastructure/graphql/adminQueries'
 
@@ -68,7 +71,7 @@ const toAppointment = (dto: AppointmentDTO): Appointment => ({
    service: dto.service,
 })
 
-export class GraphqlAdminGateway implements AdminAppointmentGateway, AdminCatalogGateway, AdminOrderGateway, AdminUserGateway{
+export class GraphqlAdminGateway implements AdminAppointmentGateway, AdminCatalogGateway, AdminOrderGateway, AdminUserGateway, AdminStatsGateway {
    constructor(private readonly gql: GraphqlClient){}
 
    async createProduct(token: string, input: ProductInput): Promise<Product> {
@@ -121,5 +124,8 @@ export class GraphqlAdminGateway implements AdminAppointmentGateway, AdminCatalo
       return res.updateAppointmentStatus ? toAppointment(res.updateAppointmentStatus) : null
    }
 
-   
+   async getStats(token: string, days: number): Promise<AdminStats> {
+      const res = await this.gql<{ adminStats: AdminStats }>(QUERY_ADMIN_STATS, { days }, { token })
+      return res.adminStats
+   }
 }
