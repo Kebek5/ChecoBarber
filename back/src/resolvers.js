@@ -9,6 +9,10 @@ import { createCalendarEvent, deleteCalendarEvent } from "./calendar.js";
 import { availableHours } from "./appointments.js";
 import { adminStats } from "./stats.js";
 
+// Importa deleteCalendarEvent desde el módulo donde esté definida.
+// Ejemplo, si corresponde a tu estructura:
+// import { deleteCalendarEvent } from "./calendar.js";
+
 const roleToGraphQL = (rol) => (rol === "admin" ? "ADMIN" : "CLIENT");
 const roleToDB = (role) => (role === "ADMIN" ? "admin" : "cliente");
 
