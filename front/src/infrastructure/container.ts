@@ -7,8 +7,10 @@ import { RegisterUser } from '@/application/useCases/RegisterUser'
 import { GetCurrentUser } from '@/application/useCases/GetCurrentUser'
 import { ListUsers } from '@/application/useCases/ListUsers'
 import { PlaceOrder } from '@/application/useCases/PlaceOrder'
+import { ListMyOrders } from '@/application/useCases/ListMyOrders'
 import { ListAdminAppointments, UpdateAppointmentStatus} from '@/application/useCases/AppointmentAdmin'
 import { GetDashboardSummary } from '@/application/useCases/GetDashboardSummary'
+import { GetAdminStats } from '@/application/useCases/GetAdminStats'
 import { GetAdminOrder, ListAdminOrders, UpdateOrderStatus } from '@/application/useCases/OrderAdmin'
 import { CreateProduct, DeleteProduct, UpdateProduct } from '@/application/useCases/ProductAdmin'
 import { config } from '@/infrastructure/config'
@@ -33,6 +35,7 @@ export const getCategoryById = new GetCategoryById(catalogRepository)
 export const listProducts = new ListProducts(catalogRepository)
 export const getProductById = new GetProductById(catalogRepository)
 export const placeOrder = new PlaceOrder(orderGateway)
+export const listMyOrders = new ListMyOrders(orderGateway)
 
 export const registerUser = new RegisterUser(authGateway)
 export const loginUser = new LoginUser(authGateway)
@@ -45,6 +48,7 @@ export const getDashboardSummary = new GetDashboardSummary(
    adminGateway,
    catalogRepository
 )
+export const getAdminStats = new GetAdminStats(adminGateway)
 const appointmentGateway = new GraphqlAppointmentGateway(graphql)
 export const listServices = new ListServices(appointmentGateway)
 export const getAvailableHours = new GetAvailableHours(appointmentGateway)

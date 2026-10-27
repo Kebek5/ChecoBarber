@@ -129,3 +129,24 @@
     @apply font-mono;
     }
 }
+
+/* Paleta de gráficas del panel (categórica, orden fijo; validada en claro y oscuro) */
+:root {
+    --viz-1: #2a78d6;
+    --viz-2: #eb6834;
+    --viz-3: #1baf7a;
+    --viz-4: #eda100;
+    --viz-5: #e87ba4;
+    --viz-surface: #ffffff;
+    --viz-grid: #e7e7e5;
+}
+
+.dark {
+    --viz-1: #3987e5;
+    --viz-2: #d95926;
+    --viz-3: #199e70;
+    --viz-4: #c98500;
+    --viz-5: #d55181;
+    --viz-surface: #1a1a19;
+    --viz-grid: #2e2e2c;
+}

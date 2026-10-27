@@ -1,5 +1,5 @@
 ---
-import { PUBLIC_PAYPAL_CLIENT_ID } from 'astro:env/client'
+import { PUBLIC_MP_PUBLIC_KEY, PUBLIC_PAYPAL_CLIENT_ID } from 'astro:env/client'
 import type { TrackedOrder } from '@/domain/order/Payment'
 import { config } from '@/infrastructure/config'
 import OrderTracking from '@/presentation/components/customer/OrderTracking'
@@ -34,6 +34,8 @@ const user = Astro.locals.user
          initial={order}
          isLoggedIn={Boolean(user)}
          paypalClientId={PUBLIC_PAYPAL_CLIENT_ID ?? ''}
+         mpPublicKey={PUBLIC_MP_PUBLIC_KEY ?? ''}
+         userEmail={user?.email ?? ''}
       />
    ) : (
       <div class="p-10 text-center text-destructive">

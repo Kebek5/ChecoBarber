@@ -5,15 +5,16 @@ import { formatPrice } from '@/presentation/components/lib/format'
 interface Props {
    data: ChartPoint[]
    money?: boolean
+   allLabels?: boolean
 }
 
-const { data, money = false } = Astro.props
+const { data, money = false, allLabels = false } = Astro.props
 const fmt = (value: number) => (money ? formatPrice(value) : String(value))
 const max = Math.max(...data.map((p) => p.value), 0)
 const total = data.reduce((sum, p) => sum + p.value, 0)
 const heightOf = (value: number) => (value > 0 ? Math.max((value / max) * 100, 2) : 0)
 // Se muestra una etiqueta sí y una no (siempre la del último día) para que no se amontonen
-const showLabel = (index: number) => index % 2 === (data.length - 1) % 2
+const showLabel = (index: number) => allLabels || index % 2 === (data.length - 1) % 2
 ---
 
 {total === 0 ? (
@@ -26,7 +27,7 @@ const showLabel = (index: number) => index % 2 === (data.length - 1) % 2
       <div class="flex h-44 items-end gap-1" role="img" aria-label={`Gráfica de columnas. Total ${fmt(total)}`}>
          {data.map((p) => (
             <div class="flex h-full flex-1 flex-col justify-end" title={`${p.hint ?? p.label}: ${fmt(p.value)}`}>
-               <div class="w-full bg-chart-3 hover:bg-chart-5" style={`height:${heightOf(p.value)}%`}></div>
+               <div class="w-full opacity-90 hover:opacity-100" style={`height:${heightOf(p.value)}%;background:var(--viz-1)`}></div>
             </div>
          ))}
       </div>

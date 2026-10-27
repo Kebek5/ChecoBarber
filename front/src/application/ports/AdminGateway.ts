@@ -3,6 +3,7 @@ import type { Appointment, AppointmentStatus } from '@/domain/appointment/Appoin
 import type { Product } from "@/domain/catalog/Product";
 import type { ProductInput } from "@/domain/catalog/ProductInput"
 import type { AdminOrder, OrderStatus } from "@/domain/order/AdminOrder";
+import type { AdminStats } from "@/domain/admin/AdminStats";
 
 export interface AdminCatalogGateway {
    createProduct(token: string, product: ProductInput): Promise<Product>
@@ -24,4 +25,8 @@ export interface AdminAppointmentGateway {
 export interface AdminUserGateway {
    listUsers(token: string): Promise<User[]>
    updateUserRole(token: string, id: string, role: Role): Promise<User | null>
+}
+
+export interface AdminStatsGateway {
+   getStats(token: string, days: number): Promise<AdminStats>
 }

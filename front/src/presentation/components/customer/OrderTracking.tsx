@@ -3,6 +3,7 @@ import {
    PAYMENT_STATUS_LABEL,
    STORED_METHOD_LABEL,
    eventLabel,
+   type BrickPaymentResult,
    type TrackedOrder,
 } from '@/domain/order/Payment'
 import { paymentsApi } from '@/infrastructure/payments/paymentsApi'
@@ -10,12 +11,15 @@ import { Badge } from '@/presentation/components/ui/badge'
 import { Button } from '@/presentation/components/ui/button'
 import { Card } from '@/presentation/components/ui/card'
 import { Separator } from '@/presentation/components/ui/separator'
+import MercadoPagoPayment from './MercadoPagoPayment.tsx'
 import PayPalPayment from './PayPalPayment.tsx'
 
 interface OrderTrackingProps {
    initial: TrackedOrder
    isLoggedIn: boolean
    paypalClientId: string
+   mpPublicKey: string
+   userEmail: string
 }
 
 const POLL_MS = 5000
@@ -23,11 +27,11 @@ const money = (value: number) => `$${value.toFixed(2)}`
 const dateTime = (iso: string) =>
    new Date(iso).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })
 
-export default function OrderTracking({ initial, isLoggedIn, paypalClientId }: OrderTrackingProps) {
+export default function OrderTracking({ initial, isLoggedIn, paypalClientId, mpPublicKey, userEmail }: OrderTrackingProps) {
    const [order, setOrder] = useState<TrackedOrder>(initial)
    const [message, setMessage] = useState<string | null>(null)
    const [error, setError] = useState<string | null>(null)
-   const [loadingLink, setLoadingLink] = useState(false)
+   const [ticketUrl, setTicketUrl] = useState<string | null>(null)
    const [copied, setCopied] = useState(false)
 
    const refresh = useCallback(async () => {
@@ -47,16 +51,18 @@ export default function OrderTracking({ initial, isLoggedIn, paypalClientId }: O
       return () => window.clearInterval(id)
    }, [waiting, refresh])
 
-   const openPaymentLink = async () => {
-      setLoadingLink(true)
+   const handleMercadoPagoResult = (result: BrickPaymentResult) => {
       setError(null)
-      try {
-         const { url } = await paymentsApi.post<{ url: string }>('mercadopago/link', { referencia: order.referencia })
-         window.location.href = url
-      } catch (err) {
-         setError(err instanceof Error ? err.message : 'No se pudo generar el link de pago.')
-         setLoadingLink(false)
+      if (result.ticketUrl) setTicketUrl(result.ticketUrl)
+      if (result.estado === 'aprobado') setMessage('Pago aprobado. Gracias por tu compra.')
+      else if (result.estado === 'pendiente') {
+         setMessage(
+            result.tipo === 'ticket'
+               ? 'Generamos tu ficha de pago. Págala en la tienda antes de que venza y tu pedido se confirmará solo.'
+               : 'Tu pago está en revisión. Te avisaremos aquí en cuanto se confirme.'
+         )
       }
+      refresh()
    }
 
    const copyTrackingLink = async () => {
@@ -69,7 +75,7 @@ export default function OrderTracking({ initial, isLoggedIn, paypalClientId }: O
       }
    }
 
-   const canPayOnline = isLoggedIn && waiting && ['link', 'paypal'].includes(order.metodoPago)
+   const canPayOnline = isLoggedIn && waiting && ['mercadopago', 'paypal'].includes(order.metodoPago)
 
    return (
       <div className="mx-auto w-full max-w-300 px-7.5 py-12.5">
@@ -139,18 +145,38 @@ export default function OrderTracking({ initial, isLoggedIn, paypalClientId }: O
                   </p>
                )}
 
-               {canPayOnline && order.metodoPago === 'link' && (
+               {waiting && order.metodoPago === 'link' && (
+                  <p className="text-muted-foreground">
+                     Este pedido se creó con un link de pago que ya no está disponible. Si ya pagaste, el estado se actualizará
+                     solo; si no, haz un nuevo pedido.
+                  </p>
+               )}
+
+               {canPayOnline && order.metodoPago === 'mercadopago' && (
                   <div className="flex flex-col gap-3">
                      <h2 className="text-xl font-bold">Pagar con Mercado Pago</h2>
-                     <p className="text-muted-foreground">
-                        Te llevamos a Mercado Pago para pagar con tarjeta, saldo o en efectivo. Al terminar regresarás a esta
-                        página, que muestra el estado del pago en tiempo real.
-                     </p>
-                     <div>
-                        <Button size="lg" onClick={openPaymentLink} disabled={loadingLink}>
-                           {loadingLink ? 'Abriendo Mercado Pago...' : 'Pagar con Mercado Pago'}
-                        </Button>
-                     </div>
+                     {(ticketUrl ?? (order.estadoPago === 'pendiente' ? order.urlPago : null)) && (
+                        <p className="rounded-lg border bg-muted/50 p-3 text-sm">
+                           Ya generaste una ficha de pago para pagar en tienda.{' '}
+                           <a
+                              href={ticketUrl ?? order.urlPago ?? '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-bold underline"
+                           >
+                              Ver ficha de pago
+                           </a>
+                           . También puedes pagar con tarjeta aquí abajo.
+                        </p>
+                     )}
+                     <MercadoPagoPayment
+                        referencia={order.referencia}
+                        amount={order.total}
+                        payerEmail={userEmail}
+                        publicKey={mpPublicKey}
+                        onResult={handleMercadoPagoResult}
+                        onError={setError}
+                     />
                   </div>
                )}
 

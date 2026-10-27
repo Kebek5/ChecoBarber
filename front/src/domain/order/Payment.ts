@@ -13,9 +13,9 @@ export interface PaymentMethodOption {
 
 export const PAYMENT_METHODS: readonly PaymentMethodOption[] = [
    {
-      id: 'LINK',
+      id: 'MERCADOPAGO',
       label: 'Mercado Pago',
-      description: 'Tarjeta de crédito o débito, saldo de Mercado Pago, OXXO y más. Te llevamos a Mercado Pago para pagar.',
+      description: 'Tarjeta de crédito o débito, o efectivo en OXXO y otras tiendas. Pagas aquí mismo, sin salir del sitio.',
       pickupOnly: false,
    },
    {
@@ -47,8 +47,8 @@ export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
 }
 
 export const STORED_METHOD_LABEL: Record<StoredPaymentMethod, string> = {
-   mercadopago: 'Tarjeta o tienda de conveniencia',
-   link: 'Link de pago Mercado Pago',
+   mercadopago: 'Mercado Pago (tarjeta o tienda)',
+   link: 'Link de pago Mercado Pago (método retirado)',
    paypal: 'PayPal',
    terminal: 'Tarjeta en terminal al recoger',
    efectivo: 'Efectivo al recoger',

@@ -1,5 +1,7 @@
 ---
-const PUBLIC_GRAPHQL_WS_URL = import.meta.env.PUBLIC_GRAPHQL_WS_URL;
+// Se lee del esquema de astro.config (tiene valor por defecto). Con import.meta.env quedaba
+// `undefined` cuando la variable no estaba en el .env y la suscripción nunca se conectaba.
+import { PUBLIC_GRAPHQL_WS_URL } from 'astro:env/client'
 
 interface Props {
   admin?: boolean
@@ -8,9 +10,12 @@ const { admin = false } = Astro.props
 ---
 
 <div id="toast-root" data-ws={PUBLIC_GRAPHQL_WS_URL} data-admin={admin ? '1' : ''} hidden></div>
+<!-- transition:persist: los avisos sobreviven al reemplazo de página que hace el catálogo en vivo -->
+<div id="toast-list" transition:persist aria-live="polite" class="fixed right-4 bottom-4 z-50 flex w-72 flex-col gap-2"></div>
 
 <script>
   import { createClient } from 'graphql-ws'
+  import { navigate } from 'astro:transitions/client'
 
   interface NewProduct {
     id: string
@@ -22,7 +27,22 @@ const { admin = false } = Astro.props
   const QUERY = `subscription { productCreated { id name price category { name } } }`
   const VISIBLE_MS = 8000
   const money = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
-  let started = false
+  // Con ClientRouter este script se vuelve a ejecutar en cada navegación: la marca va en window
+  // para tener una sola conexión por pestaña (si no, se duplican avisos y recargas).
+  const flags = window as unknown as { __newProductSubscribed?: boolean }
+  let queue: Promise<void> = Promise.resolve()
+
+  // Si el cliente está viendo el catálogo, se vuelve a pedir la página y se reemplaza sin recargar
+  // (conserva el scroll y el carrito). Se encadenan para que productos seguidos no se pisen.
+  function refreshCatalog(): Promise<void> {
+    queue = queue.then(async () => {
+      if (!document.getElementById('product-grid')) return
+      const y = window.scrollY
+      await navigate(location.pathname + location.search, { history: 'replace' })
+      window.scrollTo(0, y)
+    }).catch((err) => console.error('[catálogo en vivo]', err))
+    return queue
+  }
 
   function toastList() {
     let list = document.getElementById('toast-list')
@@ -78,16 +98,20 @@ const { admin = false } = Astro.props
   }
 
   function init() {
-    if (started) return
+    if (flags.__newProductSubscribed) return
     const url = document.getElementById('toast-root')?.dataset.ws
     if (!url) return
-    started = true
+    flags.__newProductSubscribed = true
 
     createClient({ url, retryAttempts: Infinity }).subscribe<{ productCreated: NewProduct }>(
       { query: QUERY },
       {
-        next: ({ data }) => data?.productCreated && show(data.productCreated),
-        error: (err) => console.error('[suscripción productCreated]', err),
+        next: ({ data }) => {
+          if (!data?.productCreated) return
+          show(data.productCreated)
+          void refreshCatalog()
+        },
+        error: (err: any) => console.error('[suscripción productCreated]', err),
         complete: () => {},
       }
     )

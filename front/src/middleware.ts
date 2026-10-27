@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/infrastructure/container'
 import type { User } from '@/domain/auth/User'
 
 // Páginas que requieren haber iniciado sesión
-const PROTECTED = ['/checkout','/pago']
+const PROTECTED = ['/checkout', '/pago', '/mis-compras']
 
 const ADMIN_ONLY = ['/dashboard']
 

@@ -1,10 +1,10 @@
-import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { paymentConfig, PaymentError, money, toCents } from "./config.js";
 
 const { mercadopago: mpConfig } = paymentConfig;
 
 
-async function mp(path, { method = "GET", body, idempotencyKey } = {}) {
+async function mp(path, { method = "GET", body, idempotencyKey, deviceId } = {}) {
    if (!mpConfig.accessToken) throw new PaymentError("Mercado Pago no está configurado.", 503);
 
    let res;
@@ -15,6 +15,8 @@ async function mp(path, { method = "GET", body, idempotencyKey } = {}) {
             Authorization: `Bearer ${mpConfig.accessToken}`,
             "Content-Type": "application/json",
             ...(idempotencyKey ? { "X-Idempotency-Key": idempotencyKey } : {}),
+            // Identificador del dispositivo (lo genera el SDK JS): mejora la aprobación y la prevención de fraude
+            ...(deviceId ? { "X-meli-session-id": deviceId } : {}),
          },
          body: body ? JSON.stringify(body) : undefined,
          signal: AbortSignal.timeout(20_000),
@@ -70,35 +72,65 @@ export function pointOrderToEstado(status) {
 // El monto aprobado debe coincidir con el total del pedido
 export const amountMatches = (expected, received) => Math.abs(toCents(expected) - toCents(received)) <= 1;
 
-// ---------- Payment Brick: tarjeta y tiendas de conveniencia ----------
+// ---------- Checkout API: tarjeta y tiendas de conveniencia ----------
+//
+// El navegador tokeniza la tarjeta con el SDK de Mercado Pago (Payment Brick) y nos manda solo el token.
+// Aquí se crea el pago con POST /v1/payments; los datos de la tarjeta nunca pasan por este servidor.
 
 const ALLOWED_FORM_FIELDS = ["token", "issuer_id", "payment_method_id", "installments", "payer"];
 
-export async function createBrickPayment({ pedido, formData, description, fallbackEmail }) {
+// Misma tarjeta (token de un solo uso) o mismo intento en el mismo minuto => mismo pago, no uno doble
+function idempotencyKeyFor(pedido, body) {
+   const attempt = body.token ?? `${body.payment_method_id}:${Math.floor(Date.now() / 60_000)}`;
+   return createHash("sha256").update(`${pedido.referencia}:${attempt}`).digest("hex");
+}
+
+export async function createCheckoutApiPayment({ pedido, lines = [], formData, description, fallbackEmail, deviceId }) {
    const body = {};
    for (const key of ALLOWED_FORM_FIELDS) {
       if (formData?.[key] !== undefined && formData[key] !== null && formData[key] !== "") body[key] = formData[key];
    }
    if (!body.payment_method_id) throw new PaymentError("Selecciona un medio de pago.", 400);
 
-   body.payer = { ...(body.payer ?? {}) };
-   if (!body.payer.email) body.payer.email = fallbackEmail;
+   // Solo se reenvían los campos permitidos del pagador
+   const payer = formData?.payer ?? {};
+   body.payer = { email: payer.email || fallbackEmail };
+   if (payer.first_name) body.payer.first_name = String(payer.first_name);
+   if (payer.last_name) body.payer.last_name = String(payer.last_name);
+   if (payer.identification?.type && payer.identification?.number) {
+      body.payer.identification = {
+         type: String(payer.identification.type),
+         number: String(payer.identification.number),
+      };
+   }
+   if (!body.payer.email) throw new PaymentError("Falta el correo del pagador.", 400);
+
    if (body.installments) body.installments = Number(body.installments);
+   if (body.issuer_id) body.issuer_id = Number(body.issuer_id);
 
    // El monto SIEMPRE sale de la base de datos, nunca del navegador
    body.transaction_amount = Number(money(pedido.total));
    body.description = description;
    body.external_reference = pedido.referencia;
    body.statement_descriptor = paymentConfig.storeName.slice(0, 22);
+   // Detalle de los artículos: Mercado Pago lo usa para evaluar riesgo y mejorar la tasa de aprobación
+   body.additional_info = {
+      items: lines.map((l) => ({
+         id: String(l.producto_id),
+         title: l.nombre,
+         quantity: Number(l.cantidad),
+         unit_price: Number(money(l.precio_unitario)),
+      })),
+   };
    const url = notificationUrl();
    if (url) body.notification_url = url;
 
-   return mp("/v1/payments", { method: "POST", body, idempotencyKey: randomUUID() });
+   return mp("/v1/payments", { method: "POST", body, idempotencyKey: idempotencyKeyFor(pedido, body), deviceId });
 }
 
 export const getPayment = (id) => mp(`/v1/payments/${encodeURIComponent(id)}`);
 
-// Busca el pago más relevante de un pedido (sirve para links de pago y para sincronizar sin webhook)
+// Busca el pago más relevante de un pedido (sincroniza sin webhook y cubre pedidos antiguos con link de pago)
 export async function findPaymentByReference(referencia) {
    const params = new URLSearchParams({
       external_reference: referencia,
@@ -116,32 +148,6 @@ export const ticketUrlOf = (payment) =>
    payment?.transaction_details?.external_resource_url ??
    payment?.point_of_interaction?.transaction_data?.ticket_url ??
    null;
-
-// ---------- Link de pago (Checkout Pro) ----------
-
-export async function createPaymentLink({ pedido, lines, payerEmail }) {
-   const backUrl = `${paymentConfig.frontUrl}/pedido/${pedido.referencia}`;
-   const body = {
-      items: lines.map((l) => ({
-         id: String(l.producto_id),
-         title: l.nombre,
-         quantity: Number(l.cantidad),
-         unit_price: Number(money(l.precio_unitario)),
-         currency_id: "MXN",
-      })),
-      payer: payerEmail ? { email: payerEmail } : undefined,
-      external_reference: pedido.referencia,
-      statement_descriptor: paymentConfig.storeName.slice(0, 22),
-      back_urls: { success: backUrl, pending: backUrl, failure: backUrl },
-   };
-   // auto_return solo se acepta con URLs públicas https
-   if (backUrl.startsWith("https://")) body.auto_return = "approved";
-   const url = notificationUrl();
-   if (url) body.notification_url = url;
-
-   const pref = await mp("/checkout/preferences", { method: "POST", body, idempotencyKey: randomUUID() });
-   return { id: pref.id, url: pref.init_point ?? pref.sandbox_init_point };
-}
 
 // ---------- Terminal Point (API Orders) ----------
 

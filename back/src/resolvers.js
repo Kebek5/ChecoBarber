@@ -5,6 +5,9 @@ import {
    requireAuth, requireAdmin, fail, userError,
 } from "./auth.js";
 import { pubsub, TOPICS } from "./pubsub.js";
+import { createCalendarEvent, deleteCalendarEvent } from "./calendar.js";
+import { availableHours } from "./appointments.js";
+import { adminStats } from "./stats.js";
 
 // Importa deleteCalendarEvent desde el módulo donde esté definida.
 // Ejemplo, si corresponde a tu estructura:
@@ -30,6 +33,9 @@ const appointmentStatusToDB = (status) =>
    ({ PENDING: "pendiente", COMPLETED: "completada", CANCELLED: "cancelada" })[status];
 
 const ORDER_FLOW = ["pendiente", "en_proceso", "realizado"];
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const HOUR_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const mapUser = (row) => ({
    id: row.id,
@@ -310,6 +316,23 @@ export const resolvers = {
 
          return rows[0] ? mapService(rows[0]) : null;
       },
+
+      adminStats: async (_, { days }, ctx) => {
+         requireAdmin(ctx);
+         return adminStats(days ?? 30);
+      },
+
+      // Horarios libres de un día para un servicio (cruza citas y Google Calendar)
+      availableHours: async (_, { date, idService }) => {
+         if (!DATE_RE.test(date) || Number.isNaN(Date.parse(`${date}T12:00:00Z`))) {
+            throw userError("Elige una fecha válida.");
+         }
+
+         const rows = await query("SELECT * FROM servicio WHERE id = $1", [idService]);
+         if (!rows[0]) throw userError("El servicio no existe.");
+
+         return availableHours(date, rows[0]);
+      },
    },
 
    Mutation: {
@@ -486,6 +509,11 @@ export const resolvers = {
             );
          }
 
+         // El link de pago (Checkout Pro) se retiró; solo existe en pedidos antiguos
+         if (paymentMethod === "LINK") {
+            throw userError("Ese método de pago ya no está disponible. Elige Mercado Pago (tarjeta o efectivo).");
+         }
+
          if (deliveryType === "SHIPPING" && !address) {
             throw userError("Escribe la dirección de entrega.");
          }
@@ -583,6 +611,9 @@ export const resolvers = {
          const idClient = requireAuth(ctx).id;
          const { date, hour, idService } = data;
 
+         if (!DATE_RE.test(date)) throw userError("Elige una fecha válida.");
+         if (!HOUR_RE.test(hour)) throw userError("Elige un horario válido.");
+
          const serviceRows = await query(
             "SELECT * FROM servicio WHERE id = $1",
             [idService]
@@ -590,18 +621,50 @@ export const resolvers = {
 
          const service = serviceRows[0];
 
-         if (!service) {
-            throw new Error(`Servicio ${idService} no existe.`);
+         if (!service) throw userError("El servicio no existe.");
+
+         // Se vuelve a validar en el servidor: el horario pudo ocuparse mientras el cliente decidía
+         const free = await availableHours(date, service);
+         if (!free.includes(hour)) {
+            throw userError("Ese horario ya no está disponible. Elige otro.");
          }
 
-         const rows = await query(
-            `INSERT INTO cita (fecha, hora, estado, precio, cliente_id, servicio_id)
-               VALUES ($1, $2, 'pendiente', $3, $4, $5)
-               RETURNING *`,
-            [date, hour, service.precio, idClient, idService]
-         );
+         let row;
+         try {
+            const rows = await query(
+               `INSERT INTO cita (fecha, hora, estado, precio, cliente_id, servicio_id)
+                  VALUES ($1, $2, 'pendiente', $3, $4, $5)
+                  RETURNING *`,
+               [date, hour, service.precio, idClient, idService]
+            );
+            row = rows[0];
+         } catch (e) {
+            // Índice único (fecha, hora): otra persona ganó el horario
+            if (e.code === "23505") {
+               throw userError("Ese horario ya fue tomado. Elige otro.");
+            }
+            throw e;
+         }
 
-         return mapAppointment(rows[0]);
+         // Evento en Google Calendar: si falla, la cita igual queda agendada
+         try {
+            const [client] = await query("SELECT nombre, telefono FROM usuario WHERE id = $1", [idClient]);
+            const eventId = await createCalendarEvent({
+               id: row.id,
+               date,
+               hour,
+               service,
+               clientName: client?.nombre ?? "Cliente",
+               clientTel: client?.telefono ?? "",
+            });
+            if (eventId) {
+               await query("UPDATE cita SET google_event_id = $1 WHERE id = $2", [eventId, row.id]);
+            }
+         } catch (e) {
+            console.error("[calendar] crear evento:", e.message);
+         }
+
+         return mapAppointment(row);
       },
 
       updateAppointmentStatus: async (_, { id, status }, ctx) => {
@@ -633,6 +696,21 @@ export const resolvers = {
          if (exists.length === 0) return null;
 
          throw userError("La cita no puede cambiar a ese estado.");
+      },
+
+      updateUserRole: async (_, { id, role }, ctx) => {
+         const admin = requireAdmin(ctx);
+
+         if (String(admin.id) === String(id)) {
+            throw userError("No puedes cambiar tu propio rol.");
+         }
+
+         const rows = await query(
+            "UPDATE usuario SET rol = $1 WHERE id = $2 RETURNING *",
+            [roleToDB(role), id]
+         );
+
+         return rows[0] ? mapUser(rows[0]) : null;
       },
 
       createService: async (_, { data }, ctx) => {

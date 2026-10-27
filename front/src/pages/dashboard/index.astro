@@ -1,7 +1,8 @@
 ---
+import type { AdminStats } from '@/domain/admin/AdminStats'
 import type { DashboardSummary } from '@/domain/admin/DashboardSummary'
 import { orderUnits } from '@/domain/order/AdminOrder'
-import { getDashboardSummary } from '@/infrastructure/container'
+import { getAdminStats, getDashboardSummary } from '@/infrastructure/container'
 import BaseLayoutAdmin from '@/presentation/components/layout/AdminLayout.astro'
 import DataTable from '@/presentation/components/admin/DataTable.astro'
 import Notice from '@/presentation/components/admin/Notice.astro'
@@ -11,22 +12,38 @@ import StatusBadge from '@/presentation/components/admin/StatusBadge.astro'
 import ChartCard from '@/presentation/components/admin/ChartCard.astro'
 import ColumnChart from '@/presentation/components/admin/ColumnChart.astro'
 import BarList from '@/presentation/components/admin/BarList.astro'
+import DonutChart from '@/presentation/components/admin/DonutChart.astro'
+import Heatmap from '@/presentation/components/admin/Heatmap.astro'
+import LineChart from '@/presentation/components/admin/LineChart.astro'
+import StackedColumnChart from '@/presentation/components/admin/StackedColumnChart.astro'
+import { monthLabel, shortDate } from '@/presentation/components/admin/chartUtils'
 import { toMessage } from '@/presentation/components/lib/adminError'
 import { formatDate, formatPrice, todayISO } from '@/presentation/components/lib/format'
 
 let summary: DashboardSummary | null = null
+let stats: AdminStats | null = null
 let error = ''
+let statsError = ''
 
-try {
-   summary = await getDashboardSummary.execute(Astro.locals.token!, todayISO())
-} catch (err) {
-   error = toMessage(err, 'No se pudo cargar el resumen.')
-}
+const token = Astro.locals.token!
+// Las gráficas se piden aparte: si fallan, el resumen y las tablas siguen funcionando
+const [summaryResult, statsResult] = await Promise.allSettled([
+   getDashboardSummary.execute(token, todayISO()),
+   getAdminStats.execute(token, 30),
+])
+if (summaryResult.status === 'fulfilled') summary = summaryResult.value
+else error = toMessage(summaryResult.reason, 'No se pudo cargar el resumen.')
+if (statsResult.status === 'fulfilled') stats = statsResult.value
+else statsError = toMessage(statsResult.reason, 'No se pudieron cargar las gráficas.')
+
+const sum = (values: number[]) => values.reduce((a, b) => a + b, 0)
+const shopRevenue = stats ? sum(stats.salesByMonth.map((m) => m.shop)) : 0
+const paidOrders = stats ? sum(stats.salesByDay.map((d) => d.orders)) : 0
 ---
 
 <BaseLayoutAdmin title="Resumen | Administración">
    <PageHeader title="Resumen" description="Estado actual de la tienda y de la agenda." />
-   <Notice error={error} />
+   <Notice error={error || statsError} />
 
    {summary && (
       <div class="p-4">
@@ -37,22 +54,86 @@ try {
             <StatCard label="Citas hoy" value={summary.appointmentsToday} hint={`${summary.upcomingAppointments} próximas en total`} href="/dashboard/citas" />
             <StatCard label="Productos con stock bajo" value={summary.lowStockProducts.length} />
             <StatCard label="Clientes" value={summary.customers} href="/dashboard/usuarios" />
+            {stats && (
+               <>
+                  <StatCard label="Cobrado en tienda (6 meses)" value={formatPrice(shopRevenue)} hint="Pedidos con pago aprobado" />
+                  <StatCard label="Ingresos por citas (6 meses)" value={formatPrice(sum(stats.salesByMonth.map((m) => m.appointments)))} hint="Citas completadas" />
+                  <StatCard label={`Pedidos en ${stats.days} días`} value={paidOrders} />
+               </>
+            )}
          </div>
 
-         <div class="mb-8 grid gap-4 xl:grid-cols-2">
-            <ChartCard title="Ventas por día" description={`Pedidos completados, últimos ${summary.salesByDay.length} días.`}>
-               <ColumnChart data={summary.salesByDay} money />
-            </ChartCard>
-            <ChartCard title="Pedidos por estado" description="Todos los pedidos registrados.">
-               <BarList data={summary.ordersByStatus} empty="Todavía no hay pedidos." />
-            </ChartCard>
-            <ChartCard title="Productos más vendidos" description="Unidades en pedidos completados.">
-               <BarList data={summary.topProducts} empty="Aún no hay pedidos completados." />
-            </ChartCard>
-            <ChartCard title="Citas por servicio" description="Citas pendientes y completadas.">
-               <BarList data={summary.appointmentsByService} empty="Todavía no hay citas." />
-            </ChartCard>
-         </div>
+         {stats && (
+            <>
+               <h2 class="mb-3 text-sm font-bold">Ingresos</h2>
+               <div class="mb-8 grid gap-4 xl:grid-cols-2">
+                  <div class="xl:col-span-2">
+                     <ChartCard title="Ingresos por día" description={`Tienda (pagos aprobados) y citas completadas, últimos ${stats.days} días.`}>
+                        <LineChart
+                           caption="Gráfica de líneas: ingresos diarios de la tienda y de las citas"
+                           labels={stats.salesByDay.map((d) => shortDate(d.date))}
+                           hints={stats.salesByDay.map((d) => formatDate(d.date))}
+                           series={[
+                              { name: 'Tienda', color: 'var(--viz-1)', values: stats.salesByDay.map((d) => d.shop) },
+                              { name: 'Citas', color: 'var(--viz-2)', values: stats.salesByDay.map((d) => d.appointments) },
+                           ]}
+                           money
+                           width={1100}
+                           height={260}
+                        />
+                     </ChartCard>
+                  </div>
+                  <ChartCard title="Ingresos por mes" description="Últimos 6 meses, tienda y citas apiladas.">
+                     <StackedColumnChart
+                        caption="Gráfica de columnas apiladas: ingresos mensuales de tienda y citas"
+                        labels={stats.salesByMonth.map((m) => monthLabel(m.month))}
+                        series={[
+                           { name: 'Tienda', color: 'var(--viz-1)', values: stats.salesByMonth.map((m) => m.shop) },
+                           { name: 'Citas', color: 'var(--viz-2)', values: stats.salesByMonth.map((m) => m.appointments) },
+                        ]}
+                        money
+                     />
+                  </ChartCard>
+                  <ChartCard title="Ingresos por categoría" description="Productos vendidos con pago aprobado.">
+                     <DonutChart data={stats.revenueByCategory} money empty="Aún no hay ventas cobradas." />
+                  </ChartCard>
+               </div>
+
+               <h2 class="mb-3 text-sm font-bold">Pedidos y pagos</h2>
+               <div class="mb-8 grid gap-4 xl:grid-cols-3">
+                  <ChartCard title="Pedidos por estado" description="Todos los pedidos registrados.">
+                     <DonutChart data={summary.ordersByStatus} centerLabel="Pedidos" empty="Todavía no hay pedidos." />
+                  </ChartCard>
+                  <ChartCard title="Método de pago" description="Cuántos pedidos usa cada método.">
+                     <DonutChart data={stats.ordersByPaymentMethod} centerLabel="Pedidos" empty="Todavía no hay pedidos." />
+                  </ChartCard>
+                  <ChartCard title="Estado del pago" description="Aprobados, pendientes, rechazados y más.">
+                     <DonutChart data={stats.ordersByPaymentStatus} centerLabel="Pedidos" empty="Todavía no hay pedidos." />
+                  </ChartCard>
+                  <div class="xl:col-span-3">
+                     <ChartCard title="Productos más vendidos" description="Unidades en pedidos con pago aprobado.">
+                        <BarList data={stats.topProductsPaid} empty="Aún no hay ventas cobradas." />
+                     </ChartCard>
+                  </div>
+               </div>
+
+               <h2 class="mb-3 text-sm font-bold">Agenda</h2>
+               <div class="mb-8 grid gap-4 xl:grid-cols-2">
+                  <ChartCard title="Citas por día de la semana" description="Citas pendientes y completadas.">
+                     <ColumnChart data={stats.appointmentsByWeekday} allLabels />
+                  </ChartCard>
+                  <ChartCard title="Horas más solicitadas" description="Mapa de calor: día de la semana por hora.">
+                     <Heatmap cells={stats.appointmentHeatmap} />
+                  </ChartCard>
+                  <ChartCard title="Citas por servicio" description="Número de citas pendientes y completadas.">
+                     <BarList data={summary.appointmentsByService} empty="Todavía no hay citas." />
+                  </ChartCard>
+                  <ChartCard title="Ingresos por servicio" description="Citas completadas.">
+                     <BarList data={stats.revenueByService} money empty="Aún no hay citas completadas." />
+                  </ChartCard>
+               </div>
+            </>
+         )}
 
          <div class="grid gap-8 xl:grid-cols-2">
             <section>

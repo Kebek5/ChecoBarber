@@ -1,0 +1,79 @@
+---
+import { fmtAxis, fmtValue, niceMax, type Series } from './chartUtils'
+
+interface Props {
+   labels: string[]
+   series: Series[]
+   money?: boolean
+   caption: string
+   width?: number
+   height?: number
+}
+
+const { labels, series, money = false, caption, width = 480, height = 230 } = Astro.props
+
+const W = width
+const H = height
+const M = { top: 12, right: 14, bottom: 26, left: 48 }
+const innerW = W - M.left - M.right
+const innerH = H - M.top - M.bottom
+const n = labels.length
+const band = innerW / n
+const barW = Math.min(24, band * 0.55)
+const GAP = 2
+
+const totals = labels.map((_, i) => series.reduce((sum, s) => sum + (s.values[i] ?? 0), 0))
+const max = niceMax(Math.max(...totals, 0))
+const grand = totals.reduce((a, b) => a + b, 0)
+const TICKS = 4
+const yAt = (v: number) => M.top + innerH - (v / max) * innerH
+const cx = (i: number) => M.left + band * i + band / 2
+
+// Rectángulos apilados desde la base; cada segmento sobre otro deja 2px de separación
+const bars = labels.map((_, i) => {
+   let base = 0
+   return series.map((s) => {
+      const v = s.values[i] ?? 0
+      const top = yAt(base + v)
+      const bottom = yAt(base)
+      const h = Math.max(bottom - top - (base > 0 ? GAP : 0), 0)
+      base += v
+      return { x: cx(i) - barW / 2, y: bottom - h, h, color: s.color, v }
+   })
+})
+---
+
+{grand === 0 ? (
+   <p class="py-10 text-center text-xs text-muted-foreground">Todavía no hay datos en este periodo.</p>
+) : (
+   <figure>
+      <ul class="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+         {series.map((s) => (
+            <li class="flex items-center gap-1.5">
+               <span class="inline-block size-2.5" style={`background:${s.color}`}></span>
+               <span>{s.name}</span>
+               <strong class="text-muted-foreground">{fmtValue(s.values.reduce((a, b) => a + b, 0), money)}</strong>
+            </li>
+         ))}
+      </ul>
+      <svg viewBox={`0 0 ${W} ${H}`} class="h-auto w-full" role="img" aria-label={caption}>
+         {Array.from({ length: TICKS + 1 }, (_, t) => {
+            const v = (max / TICKS) * t
+            return (
+               <g>
+                  <line x1={M.left} x2={W - M.right} y1={yAt(v)} y2={yAt(v)} style="stroke:var(--viz-grid)" stroke-width="1" />
+                  <text x={M.left - 8} y={yAt(v) + 3} text-anchor="end" class="fill-muted-foreground" font-size="10">{fmtAxis(v, money)}</text>
+               </g>
+            )
+         })}
+         {labels.map((label, i) => (
+            <g class="group">
+               <title>{label}{series.map((s) => `\n${s.name}: ${fmtValue(s.values[i] ?? 0, money)}`).join('')}{`\nTotal: ${fmtValue(totals[i], money)}`}</title>
+               <rect x={M.left + band * i} y={M.top} width={band} height={innerH} fill="transparent" class="group-hover:fill-[var(--viz-grid)]" fill-opacity="0.5" />
+               {bars[i].map((b) => b.h > 0 && <rect x={b.x} y={b.y} width={barW} height={b.h} style={`fill:${b.color}`} />)}
+               <text x={cx(i)} y={H - 8} text-anchor="middle" class="fill-muted-foreground" font-size="10">{label}</text>
+            </g>
+         ))}
+      </svg>
+   </figure>
+)}

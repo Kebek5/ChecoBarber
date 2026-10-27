@@ -1,7 +1,8 @@
 import type { OrderGateway } from '@/application/ports/OrderGateway'
 import type { Order, OrderConfirmation } from '@/domain/order/Order'
 import type { GraphqlClient } from '@/infrastructure/graphql/client'
-import { MUTATION_CREATE_ORDER } from '@/infrastructure/graphql/queries'
+import type { MyOrder } from '@/domain/order/MyOrder'
+import { MUTATION_CREATE_ORDER, QUERY_MY_ORDERS } from '@/infrastructure/graphql/queries'
 
 export class GraphqlOrderGateway implements OrderGateway {
   constructor(private readonly gql: GraphqlClient) {}
@@ -21,5 +22,11 @@ export class GraphqlOrderGateway implements OrderGateway {
       { token }
     )
     return res.createOrder
+  }
+
+  async listMine(token: string): Promise<MyOrder[]> {
+    // Para un cliente, "orders" devuelve solo sus propios pedidos
+    const res = await this.gql<{ orders: MyOrder[] }>(QUERY_MY_ORDERS, {}, { token })
+    return res.orders
   }
 }
