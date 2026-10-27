@@ -1,0 +1,92 @@
+---
+import { InvalidInputError } from '@/application/errors'
+import { isAppointmentStatus, nextAppointmentStatuses } from '@/domain/appointment/Appointment'
+import type { Appointment } from '@/domain/appointment/Appointment'
+import { listAdminAppointments, updateAppointmentStatus } from '@/infrastructure/container'
+import DataTable from '@/presentation/components/admin/DataTable.astro'
+import Notice from '@/presentation/components/admin/Notice.astro'
+import PageHeader from '@/presentation/components/admin/PageHeader.astro'
+import StatusBadge from '@/presentation/components/admin/StatusBadge.astro'
+import AdminLayout from '@/presentation/components/layout/AdminLayout.astro'
+import { toMessage } from '@/presentation/components/lib/adminError'
+import { formatDate, formatPrice } from '@/presentation/components/lib/format'
+import { buttonVariants } from '@/presentation/components/ui/button'
+
+const token = Astro.locals.token!
+
+let success = Astro.url.searchParams.get('ok') ? 'Cita actualizada.' : ''
+let error = ''
+
+if (Astro.request.method === 'POST') {
+   const form = await Astro.request.formData()
+   const id = String(form.get('id') ?? '')
+   const status = String(form.get('status') ?? '')
+
+   try {
+      if (!isAppointmentStatus(status)) throw new InvalidInputError('El estado no es válido.')
+      await updateAppointmentStatus.execute(token, id, status)
+      return Astro.redirect('/dashboard/citas?ok=1')
+   } catch (err) {
+      success = ''
+      error = toMessage(err, 'No se pudo actualizar la cita.')
+   }
+}
+
+let appointments: Appointment[] = []
+try {
+   appointments = await listAdminAppointments.execute(token)
+} catch (err) {
+   error = error || toMessage(err, 'No se pudieron cargar las citas.')
+}
+
+const sorted = [...appointments].sort((a, b) => b.date.localeCompare(a.date) || b.hour.localeCompare(a.hour))
+const label = { COMPLETED: 'Marcar completada', CANCELLED: 'Cancelar', PENDING: 'Pendiente' } as const
+---
+
+<AdminLayout title="Citas | Administración">
+   <section class="mx-auto w-full max-w-300 p-6">
+      <PageHeader title="Citas" description="Al cancelar una cita se elimina también su evento en Google Calendar." />
+      <Notice error={error} success={success} />
+
+      {sorted.length === 0 ? (
+         <p class="text-xs text-muted-foreground">Todavía no hay citas.</p>
+      ) : (
+         <DataTable>
+            <thead>
+               <tr><th>#</th><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Precio</th><th>Estado</th><th>Acción</th></tr>
+            </thead>
+            <tbody>
+               {sorted.map((appointment) => (
+                  <tr class="align-top">
+                     <td class="font-bold">{appointment.id}</td>
+                     <td>{formatDate(appointment.date)}</td>
+                     <td>{appointment.hour}</td>
+                     <td>
+                        <div class="font-bold">{appointment.customer.name}</div>
+                        <div class="text-muted-foreground">{appointment.customer.tel}</div>
+                     </td>
+                     <td>{appointment.service.name} <span class="text-muted-foreground">({appointment.service.duration})</span></td>
+                     <td>{formatPrice(appointment.price)}</td>
+                     <td><StatusBadge kind="appointment" status={appointment.status} /></td>
+                     <td>
+                        {nextAppointmentStatuses(appointment.status).length === 0 ? (
+                           <span class="text-muted-foreground">—</span>
+                        ) : (
+                           <div class="flex flex-wrap gap-2">
+                              {nextAppointmentStatuses(appointment.status).map((next) => (
+                                 <form method="post" data-confirm={`¿${label[next]} la cita ${appointment.id}?`}>
+                                    <input type="hidden" name="id" value={appointment.id} />
+                                    <input type="hidden" name="status" value={next} />
+                                    <button type="submit" class={buttonVariants({ variant: 'outline', size: 'sm' })}>{label[next]}</button>
+                                 </form>
+                              ))}
+                           </div>
+                        )}
+                     </td>
+                  </tr>
+               ))}
+            </tbody>
+         </DataTable>
+      )}
+   </section>
+</AdminLayout>
