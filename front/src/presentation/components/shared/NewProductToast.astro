@@ -103,7 +103,10 @@ const { admin = false } = Astro.props
     if (!url) return
     flags.__newProductSubscribed = true
 
-    createClient({ url, retryAttempts: Infinity }).subscribe<{ productCreated: NewProduct }>(
+    // graphql-ws solo reintenta por defecto cuando el servidor cierra una conexión ya abierta.
+    // Si el backend aún no estaba arriba (ERR_CONNECTION_REFUSED), daba por perdida la suscripción
+    // para siempre. Con shouldRetry reintenta con espera creciente hasta que el servidor responda.
+    createClient({ url, retryAttempts: Infinity, shouldRetry: () => true }).subscribe<{ productCreated: NewProduct }>(
       { query: QUERY },
       {
         next: ({ data }) => {
@@ -111,7 +114,7 @@ const { admin = false } = Astro.props
           show(data.productCreated)
           void refreshCatalog()
         },
-        error: (err: any) => console.error('[suscripción productCreated]', err),
+        error: (err: unknown) => console.warn('[suscripción productCreated] se detuvo:', err),
         complete: () => {},
       }
     )
