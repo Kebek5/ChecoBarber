@@ -43,6 +43,20 @@ export default defineConfig({
         default: '',
         optional: true,
       }),
+
+      PUBLIC_GOOGLE_MAPS_KEY: envField.string({
+        context: 'client',
+        access: 'public',
+        default: '',
+        optional: true,
+      }),
+
+      PUBLIC_SHOP_MAP_QUERY: envField.string({
+        context: 'client',
+        access: 'public',
+        default: 'ChecoBarber',
+        optional: true,
+      }),
     },
   },
 
