@@ -23,6 +23,8 @@ import {
 } from "./mercadopago.js";
 import { capturePaypalOrder, createPaypalOrder } from "./paypal.js";
 import { applyMercadoPagoPayment, applyPaypalOrder, syncOrder } from "./sync.js";
+import { adminInvoice, issueInvoice, retryInvoice } from "../facturacion/service.js";
+import { EMAIL_RE, parseFiscal } from "../facturacion/fiscal.js";
 
 export const paymentsRouter = Router();
 
@@ -203,6 +205,121 @@ paymentsRouter.post("/admin/terminales/pdv", async (req, res) => {
    const terminalId = String(req.body?.terminalId ?? "");
    if (!terminalId) throw new PaymentError("Falta terminalId.", 400);
    res.json(await setTerminalPdvMode(terminalId));
+});
+
+// ---------- Facturación ----------
+
+// GET /pagos/datos-fiscales → datos fiscales guardados del usuario (o null)
+paymentsRouter.get("/datos-fiscales", async (req, res) => {
+   const user = requireUser(req);
+   const rows = await query("SELECT * FROM datos_fiscales WHERE usuario_id = $1", [user.id]);
+   const d = rows[0];
+   res.json(
+      d
+         ? {
+              rfc: d.rfc,
+              razonSocial: d.razon_social,
+              regimenFiscal: d.regimen_fiscal,
+              codigoPostal: d.codigo_postal,
+              usoCfdi: d.uso_cfdi,
+           }
+         : null
+   );
+});
+
+// POST /pagos/datos-fiscales  { rfc, razonSocial, regimenFiscal, codigoPostal, usoCfdi }
+paymentsRouter.post("/datos-fiscales", async (req, res) => {
+   const user = requireUser(req);
+   const f = parseFiscal(req.body);
+   await query(
+      `INSERT INTO datos_fiscales (usuario_id, rfc, razon_social, regimen_fiscal, codigo_postal, uso_cfdi)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (usuario_id) DO UPDATE SET
+            rfc = EXCLUDED.rfc, razon_social = EXCLUDED.razon_social,
+            regimen_fiscal = EXCLUDED.regimen_fiscal, codigo_postal = EXCLUDED.codigo_postal,
+            uso_cfdi = EXCLUDED.uso_cfdi`,
+      [user.id, f.rfc, f.razon_social, f.regimen_fiscal, f.codigo_postal, f.uso_cfdi]
+   );
+   res.json({ ok: true });
+});
+
+// GET /pagos/factura/:referencia → descarga el XML (dueño del pedido o admin)
+paymentsRouter.get("/factura/:referencia", async (req, res) => {
+   const user = requireUser(req);
+   const pedido = await loadOwnedOrder(req.params.referencia, user);
+   const rows = await query("SELECT * FROM factura WHERE pedido_id = $1", [pedido.id]);
+   const factura = rows[0];
+   if (!factura?.xml) throw new PaymentError("Este pedido aún no tiene factura.", 404);
+   res.set({
+      "Content-Type": "application/xml; charset=utf-8",
+      "Content-Disposition": `attachment; filename="factura-${factura.serie}-${factura.folio}.xml"`,
+   });
+   res.send(factura.xml);
+});
+
+// POST /pagos/factura/:referencia/reenviar → el cliente (o admin) pide o reenvía su factura
+paymentsRouter.post("/factura/:referencia/reenviar", async (req, res) => {
+   const user = requireUser(req);
+   const pedido = await loadOwnedOrder(req.params.referencia, user);
+   if (pedido.estado_pago !== "aprobado") throw new PaymentError("El pedido aún no está pagado.", 409);
+   const rows = await query("SELECT id FROM factura WHERE pedido_id = $1", [pedido.id]);
+   // Si el pedido se pagó antes de existir la facturación, se genera ahora
+   const result = rows.length ? await retryInvoice(pedido.id) : await issueInvoice(pedido.id);
+   if (result.ok === false) throw new PaymentError(`No se pudo enviar: ${result.error}`, 502);
+   res.json({ ok: true });
+});
+
+// GET /pagos/admin/facturas → pedidos pagados con el estado de su factura
+paymentsRouter.get("/admin/facturas", async (req, res) => {
+   requireAdminUser(req);
+   const rows = await query(
+      `SELECT p.referencia, p.fecha, p.total, p.metodo_pago,
+              u.nombre AS cliente, u.correo,
+              f.estado AS factura_estado, f.error AS factura_error,
+              f.enviada_en, f.correo_destino,
+              COALESCE(f.receptor->>'rfc', df.rfc) AS rfc
+         FROM pedido p
+         JOIN usuario u ON u.id = p.cliente_id
+         LEFT JOIN factura f ON f.pedido_id = p.id
+         LEFT JOIN datos_fiscales df ON df.usuario_id = p.cliente_id
+         WHERE p.estado_pago = 'aprobado'
+         ORDER BY p.pagado_en DESC NULLS LAST, p.id DESC
+         LIMIT 200`
+   );
+   res.json(
+      rows.map((r) => ({
+         referencia: r.referencia,
+         fecha: r.fecha,
+         total: Number(r.total),
+         metodoPago: r.metodo_pago,
+         cliente: r.cliente,
+         correo: r.correo,
+         rfc: r.rfc,
+         facturaEstado: r.factura_estado,
+         facturaError: r.factura_error,
+         enviadaEn: r.enviada_en,
+         correoDestino: r.correo_destino,
+      }))
+   );
+});
+
+// POST /pagos/admin/factura/:referencia  { correo?, publicoGeneral?, receptor? }
+// Sin receptor ni publicoGeneral → usa los datos fiscales guardados del cliente
+paymentsRouter.post("/admin/factura/:referencia", async (req, res) => {
+   requireAdminUser(req);
+   const pedido = await findOrderByReference(req.params.referencia);
+   if (!pedido) throw new PaymentError("El pedido no existe.", 404);
+   if (pedido.estado_pago !== "aprobado") throw new PaymentError("El pedido aún no está pagado.", 409);
+
+   const b = req.body ?? {};
+   const correo = b.correo ? String(b.correo).trim().toLowerCase() : null;
+   if (correo && !EMAIL_RE.test(correo)) throw new PaymentError("El correo no es válido.", 400);
+
+   const receptor = b.publicoGeneral ? { general: true } : b.receptor ? parseFiscal(b.receptor) : null;
+
+   const result = await adminInvoice(pedido.id, { receptor, correo });
+   if (!result.ok) throw new PaymentError(`No se pudo enviar: ${result.error}`, 502);
+   res.json({ ok: true });
 });
 
 // ---------- Manejo de errores ----------

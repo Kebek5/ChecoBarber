@@ -1,0 +1,16 @@
+---
+import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
+import DatosFiscalesForm from '@/presentation/components/shared/DatosFiscalesForm'
+---
+
+<BaseLayout title="Datos fiscales | ChecoBarber">
+   <div class="mx-auto flex w-full max-w-150 flex-col gap-6 p-6">
+      <header>
+         <h1 class="text-2xl font-bold">Datos fiscales</h1>
+         <p class="mt-1 text-sm text-muted-foreground">
+            Si los guardas, tus facturas saldrán a tu nombre. Si no, se emiten a Público en general.
+         </p>
+      </header>
+      <DatosFiscalesForm client:only="react" />
+   </div>
+</BaseLayout>
