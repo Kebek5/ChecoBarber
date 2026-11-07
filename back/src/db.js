@@ -5,6 +5,8 @@ import "dotenv/config";
 // horaria del servidor, y al serializarlo con toISOString() el día puede correrse uno hacia atrás.
 pg.types.setTypeParser(1082, (value) => value);
 
+// SSL solo cuando se pide (base remota). En local déjalo en false.
+const useSsl = ["true", "1"].includes(String(process.env.DB_SSL ?? "").toLowerCase());
 
 export const pool = new pg.Pool({
    host: process.env.DB_HOST,
@@ -13,10 +15,7 @@ export const pool = new pg.Pool({
    password: process.env.DB_PASSWORD,
    database: process.env.DB_NAME,
    max: 10,
-
-   ssl: {
-      rejectUnauthorized: false,
-   },
+   ssl: useSsl ? { rejectUnauthorized: false } : false,
 });
 
 
