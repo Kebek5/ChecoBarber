@@ -19,6 +19,7 @@ import StatusBadge from '@/presentation/components/admin/StatusBadge.astro'
 import { buttonVariants } from '@/presentation/components/ui/button'
 import { toMessage } from '@/presentation/components/lib/adminError'
 import { formatDate, formatPrice } from '@/presentation/components/lib/format'
+import InvoiceActions from '@/presentation/components/shared/InvoiceActions'
 
 const token = Astro.locals.token!
 
@@ -53,6 +54,7 @@ const lineLabel = (order: MyOrder) => {
       <header>
          <h1 class="text-2xl font-bold">Mis compras</h1>
          <p class="mt-1 text-sm text-muted-foreground">Tus pedidos, su estado de pago y su seguimiento en un solo lugar.</p>
+         <a href="/datos-fiscales" class="mt-2 inline-block text-xs underline">Mis datos fiscales</a>
       </header>
 
       <Notice error={error} />
@@ -146,6 +148,7 @@ const lineLabel = (order: MyOrder) => {
                         <a href={`/pedido/${order.reference}`} class={buttonVariants({ variant: 'outline', size: 'lg' })}>
                            Ver seguimiento
                         </a>
+                        {order.paymentStatus === 'APPROVED' && <InvoiceActions client:load reference={order.reference} />}
                      </div>
                   </div>
                </li>

@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { pool, query } from "../db.js";
 import { PaymentError } from "./config.js";
 import { eventosCollection } from "../mongo.js";
+import { issueInvoice } from "../facturacion/service.js";
 
 // Referencia pública del pedido: CB- + 12 hex. Sirve como external_reference y en la URL de seguimiento.
 export const newReference = () => `CB-${randomBytes(6).toString("hex")}`;
@@ -151,6 +152,14 @@ export async function applyPaymentStatus(pedidoId, { estado, proveedor, externoI
    for (const [prov, ev, est, det] of eventosPendientes) {
       await logEvent(pedidoId, prov, ev, est, det);
    }
+
+   // Pago aprobado por primera vez → se factura sin bloquear la respuesta al webhook
+   if (resultado?.cambio && estado === "aprobado") {
+      issueInvoice(pedidoId).catch((err) =>
+         console.error("[facturación] No se pudo iniciar la factura", err.message)
+      );
+   }
+
    return resultado;
 }
 // Datos que puede ver cualquiera con el enlace de seguimiento (sin datos personales)
