@@ -1,6 +1,7 @@
 ---
 import type { Category } from '@/domain/catalog/Category'
 import { getCategories, getCategoryById } from '@/infrastructure/container'
+import { truncate } from '@/presentation/components/lib/seo'
 import Shop from '@/presentation/components/customer/Shop.astro'
 import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
 
@@ -18,9 +19,17 @@ try {
 }
 
 if (!error && !category) Astro.response.status = 404
+
+const name = category?.name ?? 'Categoría'
+const title = truncate(`${name} | ChecoBarber`, 60)
+const description = truncate(
+  category?.description?.trim() ||
+    `Productos de ${name} en ChecoBarber: cuidado para cabello y barba. Compra en línea.`,
+  160
+)
 ---
 
-<BaseLayout title={`${category?.name ?? 'Categoría'} | ChecoBarber`}>
+<BaseLayout title={title} description={description} noindex={!category}>
   <Shop
     categories={categories}
     products={category?.products ?? []}

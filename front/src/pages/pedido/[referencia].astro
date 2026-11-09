@@ -27,7 +27,7 @@ try {
 const user = Astro.locals.user
 ---
 
-<BaseLayout title={`Pedido ${referencia} | ChecoBarber`}>
+<BaseLayout title={`Pedido ${referencia} | ChecoBarber`} noindex>
    {order ? (
       <OrderTracking
          client:only="react"
