@@ -13,7 +13,7 @@ const q = Astro.url.searchParams.get('q') ?? ''
 
 <header class="sticky top-0 z-50 flex min-h-22.5 flex-wrap items-center gap-x-6 gap-y-3 border-b bg-background px-4 py-3 md:px-8">
   <a href="/" class="h-16 w-25 shrink-0">
-    <img src="/logo.png" alt="ChecoBarber" class="size-full object-contain object-center" />
+    <img src="/logo-sm.webp" alt="ChecoBarber" width="100" height="64" decoding="async" class="size-full object-contain object-center" />
   </a>
 
   <!-- 3. Le agregamos un ID al formulario y quitamos el botón de submit manual -->
@@ -108,57 +108,3 @@ const q = Astro.url.searchParams.get('q') ?? ''
 
   document.addEventListener('astro:page-load', initSearch);
 </script>
-
-
-
-
-<!-- ---
-import { MagnifyingGlassIcon, ShoppingCartIcon, SignOutIcon } from '@phosphor-icons/react/dist/ssr'
-import CartBadge from '@/presentation/components/layout/CartBadge'
-import { buttonVariants } from '@/presentation/components/ui/button'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/presentation/components/ui/input-group'
-
-const user = Astro.locals.user
-const q = Astro.url.searchParams.get('q') ?? ''
----
-
-<header class="sticky top-0 z-50 flex min-h-22.5 flex-wrap items-center gap-x-6 gap-y-3 border-b bg-background px-4 py-3 md:px-8">
-  <a href="/" class="h-16 w-25 shrink-0">
-    <img src="/logo.png" alt="ChecoBarber" class="size-full object-contain object-center" />
-  </a>
-
-  <form action="/" method="get" role="search" class="order-last w-full sm:order-0 sm:w-auto sm:max-w-150 sm:flex-1">
-    <InputGroup className="h-10 rounded-full">
-      <InputGroupAddon>
-        <MagnifyingGlassIcon />
-      </InputGroupAddon>
-      <InputGroupInput name="q" type="search" defaultValue={q} placeholder="Busca cera, cortes..." aria-label="Buscar productos" />
-    </InputGroup>
-  </form>
-
-  <nav class="ml-auto flex items-center gap-3">
-    <CartBadge client:only="react">
-      <a slot="fallback" href="/carrito" class={buttonVariants({ variant: 'outline', size: 'lg' })}>
-        <ShoppingCartIcon weight="bold" />
-        <span class="hidden sm:inline">Tu carrito</span>
-      </a>
-    </CartBadge>
-
-    {user ? (
-      <>
-        <span class="hidden text-sm lg:inline">Hola, {user.name}</span>
-        <form method="post" action="/salir">
-          <button type="submit" class={buttonVariants({ variant: 'outline', size: 'lg' })}>
-            <SignOutIcon />
-            <span class="hidden sm:inline">Cerrar sesión</span>
-          </button>
-        </form>
-      </>
-    ) : (
-      <>
-        <a href="/login" class={buttonVariants({ variant: 'ghost', size: 'lg' })}>Iniciar sesión</a>
-        <a href="/registro" class={buttonVariants({ variant: 'default', size: 'lg' })}>Registrarse</a>
-      </>
-    )}
-  </nav>
-</header> -->

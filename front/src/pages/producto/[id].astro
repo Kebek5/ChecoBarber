@@ -22,4 +22,4 @@ if (!error && !product) Astro.response.status = 404
   {error && <div class="p-10 text-destructive">Error: {error}</div>}
   {!error && !product && <div class="p-10">No se encontró el producto.</div>}
   {product && <ProductDetail product={product} />}
-</BaseLayout>ch
+</BaseLayout>
