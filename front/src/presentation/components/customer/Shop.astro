@@ -22,6 +22,9 @@ const title = search
   : activeCategory
     ? activeCategory.name
     : 'Todos los productos'
+
+const isHome = !activeCategoryId && !search
+const Title = isHome ? 'h2' : 'h1'
 ---
 
 {error ? (
@@ -31,14 +34,15 @@ const title = search
   </div>
 ) : (
   <>
-    <Hero />
+    <Hero asH1={isHome}/>
 
     <div id="catalogo" class="mx-auto flex w-full max-w-[1600px] scroll-mt-28 flex-col items-start md:flex-row">
       <CategorySidebar categories={categories} activeCategoryId={activeCategoryId} />
 
       <section class="w-full min-w-0 flex-1 p-7.5">
         <div class="mb-6 flex items-center justify-between gap-5">
-          <h2 class="text-2xl font-bold">{title}</h2>
+          <Title class="text-2xl font-bold">{title}</Title>
+          {!isHome && <h2 class="sr-only">Productos disponibles</h2>}
         </div>
 
         <div id="product-grid" class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-6">

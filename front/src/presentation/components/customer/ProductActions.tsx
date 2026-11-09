@@ -33,7 +33,7 @@ export default function ProductActions({ product }: ProductActionsProps) {
    return (
       <div className="flex flex-col items-start w-full">
          {/* Texto del stock reactivo */}
-         <p className={`mb-6 text-[13px] ${inStock ? 'text-green-600' : 'text-destructive'}`}>
+         <p className={`mb-6 text-[13px] ${inStock ? 'text-green-800' : 'text-destructive'}`}>
          {inStock ? `Stock disponible: ${currentStock} unidades` : 'Agotado'}
          </p>
 

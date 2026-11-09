@@ -1,6 +1,12 @@
 ---
 import { Badge } from '@/presentation/components/ui/badge'
 import { buttonVariants } from '@/presentation/components/ui/button'
+
+interface Props {
+   asH1?: boolean
+}
+const { asH1 = true } = Astro.props
+const Heading = asH1 ? 'h1' : 'p'
 ---
 
 <section class="mx-auto flex min-h-130 w-full max-w-[1600px] flex-col items-center justify-between gap-12 overflow-hidden px-6 py-16 md:flex-row md:px-15 md:py-17.5">
@@ -8,10 +14,10 @@ import { buttonVariants } from '@/presentation/components/ui/button'
       <Badge variant="outline" className="mb-4.5 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[2px]">
          Haircuts &amp; Shaves
       </Badge>
-      <h1 class="mb-5 text-[clamp(42px,6vw,76px)] leading-[0.98] font-bold tracking-[-2px]">
+      <Heading class="mb-5 text-[clamp(42px,6vw,76px)] leading-[0.98] font-bold tracking-[-2px]">
          Chequito Barber.<br />
          Cuida cada detalle.
-      </h1>
+      </Heading>
       <p class="mb-7.5 max-w-140 text-[17px] leading-relaxed text-muted-foreground">
          Descubre nuestra selección de productos para cabello y barba y lleva tu rutina de cuidado
          al siguiente nivel.
