@@ -1,6 +1,8 @@
 ---
 import type { Product } from '@/domain/catalog/Product'
 import { getProductById } from '@/infrastructure/container'
+import { resizeImage } from '@/presentation/components/lib/image'
+import { productJsonLd, toScriptJson, truncate } from '@/presentation/components/lib/seo'
 import ProductDetail from '@/presentation/components/customer/ProductDetail.astro'
 import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
 
@@ -16,10 +18,22 @@ try {
 }
 
 if (!error && !product) Astro.response.status = 404
+
+const base = Astro.site ?? new URL(Astro.url.origin)
+const pageUrl = new URL(Astro.url.pathname, base).href
+const image = product?.img ? new URL(resizeImage(product.img, 1200), base).href : undefined
+
+const title = truncate(`${product?.name ?? 'Producto'} | ChecoBarber`, 60)
+const description = product
+  ? truncate(product.description || `Compra ${product.name} en ChecoBarber.`, 160)
+  : 'Producto no disponible en ChecoBarber.'
+const jsonLd = product ? productJsonLd(product, pageUrl, image) : null
 ---
 
-<BaseLayout title={`${product?.name ?? 'Producto'} | ChecoBarber`}>
+<BaseLayout title={title} description={description} image={image} type="product" noindex={!product}>
+  {jsonLd && <script type="application/ld+json" slot="head" set:html={toScriptJson(jsonLd)} />}
+
   {error && <div class="p-10 text-destructive">Error: {error}</div>}
   {!error && !product && <div class="p-10">No se encontró el producto.</div>}
   {product && <ProductDetail product={product} />}
-</BaseLayout>ch
+</BaseLayout>

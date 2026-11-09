@@ -3,11 +3,33 @@ import '@/styles/global.css'
 import TopBar from '@/presentation/components/layout/TopBar.astro'
 import Footer from '@/presentation/components/layout/Footer.astro'
 import NewProductToast from '@/presentation/components/shared/NewProductToast.astro'
+
 interface Props {
   title?: string
+  description?: string
+  image?: string
+  canonical?: string
+  type?: 'website' | 'product'
+  noindex?: boolean
 }
 
-const { title = 'ChecoBarber' } = Astro.props
+const SITE_NAME = 'ChecoBarber'
+const DEFAULT_DESCRIPTION =
+  'Productos para cabello y barba en ChecoBarber: ceras, aceites y más. Compra en línea y agenda tu cita.'
+
+const {
+  title = SITE_NAME,
+  description = DEFAULT_DESCRIPTION,
+  image = '/logo.png',
+  canonical,
+  type = 'website',
+  noindex = false,
+} = Astro.props
+
+// Canonical sin query (/?q=cera → /). Usa `site` de astro.config
+const base = Astro.site ?? new URL(Astro.url.origin)
+const canonicalUrl = new URL(canonical ?? Astro.url.pathname, base).href
+const imageUrl = new URL(image, base).href
 ---
 
 <!doctype html>
@@ -18,15 +40,35 @@ const { title = 'ChecoBarber' } = Astro.props
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
+
     <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:locale" content="es_MX" />
+    <meta property="og:type" content={type} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={imageUrl} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <slot name="head" />
   </head>
   <body class="flex min-h-screen flex-col">
+    <a
+      href="#contenido"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-60 focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-bold focus:underline"
+    >
+      Saltar al contenido
+    </a>
     <TopBar />
-    <main class="flex-1">
+    <main id="contenido" tabindex="-1" class="flex-1 outline-none">
       <slot />
     </main>
-   <Footer />
+    <Footer />
     <NewProductToast />
   </body>
-  
 </html>

@@ -120,6 +120,13 @@ const { admin = false } = Astro.props
     )
   }
 
-  init()
-  document.addEventListener('astro:page-load', init)
+  // init()
+  // document.addEventListener('astro:page-load', init)
+
+  // Abre el WebSocket cuando el navegador está libre, para no competir con el render inicial
+  const whenIdle = (fn: () => void) =>
+    'requestIdleCallback' in window ? window.requestIdleCallback(fn, { timeout: 4000 }) : setTimeout(fn, 2000)
+
+  whenIdle(init)
+  document.addEventListener('astro:page-load', () => whenIdle(init))
 </script>

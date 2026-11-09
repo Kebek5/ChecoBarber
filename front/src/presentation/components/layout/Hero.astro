@@ -1,6 +1,12 @@
 ---
 import { Badge } from '@/presentation/components/ui/badge'
 import { buttonVariants } from '@/presentation/components/ui/button'
+
+interface Props {
+   asH1?: boolean
+}
+const { asH1 = true } = Astro.props
+const Heading = asH1 ? 'h1' : 'p'
 ---
 
 <section class="mx-auto flex min-h-130 w-full max-w-[1600px] flex-col items-center justify-between gap-12 overflow-hidden px-6 py-16 md:flex-row md:px-15 md:py-17.5">
@@ -8,10 +14,10 @@ import { buttonVariants } from '@/presentation/components/ui/button'
       <Badge variant="outline" className="mb-4.5 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[2px]">
          Haircuts &amp; Shaves
       </Badge>
-      <h1 class="mb-5 text-[clamp(42px,6vw,76px)] leading-[0.98] font-bold tracking-[-2px]">
+      <Heading class="mb-5 text-[clamp(42px,6vw,76px)] leading-[0.98] font-bold tracking-[-2px]">
          Chequito Barber.<br />
          Cuida cada detalle.
-      </h1>
+      </Heading>
       <p class="mb-7.5 max-w-140 text-[17px] leading-relaxed text-muted-foreground">
          Descubre nuestra selección de productos para cabello y barba y lleva tu rutina de cuidado
          al siguiente nivel.
@@ -23,13 +29,15 @@ import { buttonVariants } from '@/presentation/components/ui/button'
    </div>
 
    <div class="relative flex size-105 max-w-full shrink-0 items-center justify-center">
-      <div
-         class="size-85 max-w-[85%] rounded-full bg-[#fde2be] bg-cover shadow-[0_20px_40px_#2224]"
-         style="background-image: url('/logo.png'); background-position: center -10px;"
-         role="img"
-         aria-label="Logo de ChecoBarber"
-      >
-      </div>
+      <img
+         src="/logo-hero.webp"
+         alt="Logo de ChecoBarber"
+         width="340"
+         height="340"
+         fetchpriority="high"
+         decoding="async"
+         class="size-85 max-w-[85%] rounded-full bg-[#fde2be] object-cover object-[center_-10px] shadow-[0_20px_40px_#2224]"
+      />
       <div class="absolute right-0 bottom-8.75 flex size-27.5 flex-col items-center justify-center rounded-full border border-foreground bg-background shadow-[0_8px_20px_#2223]">
          <strong class="text-2xl">Carpe</strong>
          <span class="text-base text-muted-foreground uppercase">diem</span>

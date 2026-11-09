@@ -5,6 +5,6 @@ import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
 const user = Astro.locals.user
 ---
 
-<BaseLayout title="Checkout | ChecoBarber">
+<BaseLayout title="Checkout | ChecoBarber" noindex>
   <Checkout client:only="react" userName={user?.name ?? ''} userEmail={user?.email ?? ''} userTel={user?.tel ?? ''} />
 </BaseLayout>
