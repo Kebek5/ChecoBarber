@@ -3,6 +3,7 @@ import '@/styles/global.css'
 import TopBar from '@/presentation/components/layout/TopBar.astro'
 import Footer from '@/presentation/components/layout/Footer.astro'
 import NewProductToast from '@/presentation/components/shared/NewProductToast.astro'
+import { pwaInfo } from 'virtual:pwa-info'
 
 interface Props {
   title?: string
@@ -42,6 +43,7 @@ const imageUrl = new URL(image, base).href
     <meta name="generator" content={Astro.generator} />
 
     <title>{title}</title>
+    { pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} /> }
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalUrl} />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
