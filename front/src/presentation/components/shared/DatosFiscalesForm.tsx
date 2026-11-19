@@ -3,6 +3,7 @@ import { EMPTY_FISCAL, type DatosFiscales } from '@/domain/order/Fiscal'
 import { paymentsApi } from '@/infrastructure/payments/paymentsApi'
 import { Button } from '@/presentation/components/ui/button'
 import FiscalFields from './FiscalFields'
+import { isOfflineError, queueRequest } from '@/pwa/client'
 
 export default function DatosFiscalesForm() {
    const [value, setValue] = useState<DatosFiscales>(EMPTY_FISCAL)
@@ -27,7 +28,13 @@ export default function DatosFiscalesForm() {
          await paymentsApi.post('datos-fiscales', value)
          setSuccess('Datos fiscales guardados. Se usarán en tus próximas facturas.')
       } catch (err) {
-         setError(err instanceof Error ? err.message : 'No se pudieron guardar.')
+         if (isOfflineError(err)) {
+            // Sin red: se guarda en la cola y el Service Worker lo envía cuando vuelva la conexión
+            await queueRequest('/api/pagos/datos-fiscales', 'POST', value)
+            setSuccess('Sin conexión: guardaremos tus datos automáticamente cuando vuelva la red.')
+         } else {
+            setError(err instanceof Error ? err.message : 'No se pudieron guardar.')
+         }
       } finally {
          setBusy(false)
       }

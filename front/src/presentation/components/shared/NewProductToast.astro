@@ -16,6 +16,7 @@ const { admin = false } = Astro.props
 <script>
   import { createClient } from 'graphql-ws'
   import { navigate } from 'astro:transitions/client'
+  import { showLocalNotification } from '@/pwa/client'
 
   interface NewProduct {
     id: string
@@ -59,6 +60,14 @@ const { admin = false } = Astro.props
   function show(product: NewProduct) {
     const admin = document.getElementById('toast-root')?.dataset.admin === '1'
     const list = toastList()
+    // Pestaña oculta: el aviso en pantalla no se ve, así que se usa una notificación del sistema
+    if (document.hidden) {
+      showLocalNotification('Nuevo producto en ChecoBarber', {
+        body: `${product.name} · ${money.format(product.price)}`,
+        tag: `producto-${product.id}`,
+        url: admin ? `/dashboard/productos/${product.id}` : `/producto/${product.id}`,
+      })
+    }
     list.querySelector(`[data-id="${product.id}"]`)?.remove()
 
     const card = document.createElement('div')

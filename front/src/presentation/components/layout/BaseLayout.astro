@@ -44,6 +44,8 @@ const imageUrl = new URL(image, base).href
 
     <title>{title}</title>
     { pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} /> }
+    <meta name="theme-color" content="#fde2be" />
+    
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalUrl} />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
@@ -72,5 +74,10 @@ const imageUrl = new URL(image, base).href
     </main>
     <Footer />
     <NewProductToast />
+
+    <script>
+      import { initPwaClient } from '@/pwa/client'
+      initPwaClient()
+    </script>
   </body>
 </html>

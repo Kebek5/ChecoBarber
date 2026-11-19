@@ -15,16 +15,23 @@ export default defineConfig({
   integrations: [
     react(),
     AstroPWAIntegration({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
       devOptions: {
-        enabled: true,
+        enabled: process.env.PWA_DEV === 'true',
+        type: 'module'
       },
       manifest: {
         id: '/',
         name: "Checo Barber, Citas y Productos",
         short_name: "Checo Barber",
         description: 'Productos para cabello y barba y citas en ChecoBarber.',
+        lang: 'es',
         start_url: "/",
+        scope: '/',
         display: "standalone",
         theme_color: "#fde2be",
         background_color: "#ffffff",
@@ -33,7 +40,11 @@ export default defineConfig({
           { src: "/icons/icon-512.webp", sizes: "512x530", type: "image/webp" },
           { src: "/icons/maskable_icon.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ]
-      }
+      },
+      injectManifest: {
+        // Solo archivos estáticos: tu tienda es SSR, no hay HTML que precachear
+        globPatterns: ['**/*.{js,css,svg,png,ico,webp,woff2}'],
+      },
     })
   ],
 
