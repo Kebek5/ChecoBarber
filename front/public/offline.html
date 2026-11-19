@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es">
+   <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <meta name="robots" content="noindex" />
+      <meta name="theme-color" content="#fde2be" />
+      <title>Sin conexión | ChecoBarber</title>
+      <style>
+         body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            font-family: system-ui, sans-serif;
+            background: #fde2be;
+            color: #1a1a1a;
+         }
+         main { width: 100%; max-width: 30rem; padding: 2rem; box-sizing: border-box; }
+         h1 { margin: 0 0 0.75rem; font-size: 1.75rem; }
+         h2 { margin: 2rem 0 0.5rem; font-size: 1.1rem; }
+         p { margin: 0 0 1.25rem; line-height: 1.5; }
+         ul { margin: 0; padding: 0; list-style: none; }
+         li { margin: 0 0 0.5rem; }
+         li a { display: block; padding: 0.6rem 0.9rem; border: 2px solid #1a1a1a; background: #fff; }
+         a { color: #1a1a1a; font-weight: 700; }
+         button {
+            padding: 0.65rem 1.25rem;
+            border: 2px solid #1a1a1a;
+            background: #1a1a1a;
+            color: #fff;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+         }
+         a:focus-visible, button:focus-visible { outline: 3px solid #1a1a1a; outline-offset: 2px; }
+      </style>
+   </head>
+   <body>
+      <main>
+         <h1>Sin conexión</h1>
+         <p>
+         <strong>Esta página no está guardada en tu dispositivo</strong> y necesita internet para
+         cargarse. Las páginas que ya visitaste siguen disponibles.
+         </p>
+         <button type="button" onclick="location.reload()">Reintentar</button>
+
+         <section id="visitadas" hidden>
+         <h2>Páginas que ya visitaste</h2>
+         <ul id="lista"></ul>
+         </section>
+      </main>
+
+      <script>
+         window.addEventListener('online', () => location.reload())
+
+         // Lista lo que el Service Worker tiene guardado (nombre del caché: paginas-catalogo-v1)
+         ;(async () => {
+         try {
+            if (!('caches' in window) || !(await caches.has('paginas-catalogo-v1'))) return
+            const cache = await caches.open('paginas-catalogo-v1')
+            const requests = (await cache.keys()).slice(0, 30)
+            const lista = document.getElementById('lista')
+
+            for (const req of requests) {
+               const url = new URL(req.url)
+               if (url.pathname === location.pathname) continue
+
+               const res = await cache.match(req, { ignoreVary: true })
+               const html = res ? await res.text() : ''
+               const title = new DOMParser().parseFromString(html, 'text/html').title || url.pathname
+
+               const li = document.createElement('li')
+               const a = document.createElement('a')
+               a.href = url.pathname
+               a.textContent = title
+               li.append(a)
+               lista.append(li)
+            }
+
+            if (lista.children.length) document.getElementById('visitadas').hidden = false
+         } catch {
+            // si el caché no se puede leer, se queda solo el mensaje principal
+         }
+         })()
+      </script>
+   </body>
+</html>
