@@ -1,8 +1,10 @@
 import type { APIRoute } from 'astro'
 import { getCategories, listProducts } from '@/infrastructure/container'
+import { pathFor } from '@/i18n/routes'
 
 export const GET: APIRoute = async ({ site, url }) => {
    const base = site ?? new URL(url.origin)
+   const abs = (path: string) => new URL(path, base).href
    const paths = ['/', '/citas']
 
    try {
@@ -13,10 +15,23 @@ export const GET: APIRoute = async ({ site, url }) => {
       console.error('[sitemap] No se pudo leer el catálogo', err)
    }
 
-   const urls = paths.map((p) => `  <url><loc>${new URL(p, base).href}</loc></url>`).join('\n')
+   const urls = paths.flatMap((es) => {
+      const en = pathFor(es, 'en')
+      const alternates = en
+         ? `
+    <xhtml:link rel="alternate" hreflang="es" href="${abs(es)}"/>
+    <xhtml:link rel="alternate" hreflang="en" href="${abs(en)}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="${abs(es)}"/>`
+         : ''
+      const entry = (loc: string) => `  <url>
+    <loc>${abs(loc)}</loc>${alternates}
+  </url>`
+      return en ? [entry(es), entry(en)] : [entry(es)]
+   })
+
    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls}
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+${urls.join('\n')}
 </urlset>
 `
 

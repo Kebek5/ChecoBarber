@@ -11,7 +11,7 @@ const { admin = false } = Astro.props
 
 <div id="toast-root" data-ws={PUBLIC_GRAPHQL_WS_URL} data-admin={admin ? '1' : ''} hidden></div>
 <!-- transition:persist: los avisos sobreviven al reemplazo de página que hace el catálogo en vivo -->
-<div id="toast-list" transition:persist aria-live="polite" class="fixed right-4 bottom-4 z-50 flex w-72 flex-col gap-2"></div>
+<div id="toast-list" transition:persist aria-live="polite" class="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[max(1rem,env(safe-area-inset-bottom))] z-50 flex w-72 flex-col gap-2"></div>
 
 <script>
   import { createClient } from 'graphql-ws'
@@ -51,7 +51,7 @@ const { admin = false } = Astro.props
       list = document.createElement('div')
       list.id = 'toast-list'
       list.setAttribute('aria-live', 'polite')
-      list.className = 'fixed right-4 bottom-4 z-50 flex w-72 flex-col gap-2'
+      list.className = 'fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[max(1rem,env(safe-area-inset-bottom))] z-50 flex w-72 flex-col gap-2'
       document.body.append(list)
     }
     return list

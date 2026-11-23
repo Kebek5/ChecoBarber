@@ -8,6 +8,7 @@ Allow: /
 Disallow: /dashboard
 Disallow: /api/
 Disallow: /carrito
+Disallow: /en/cart
 Disallow: /checkout
 Disallow: /pago
 Disallow: /pedido/

@@ -23,8 +23,8 @@ const OFFLINE_URL = '/offline.html'
 const ICON = '/icons/icon-192.webp'
 
 // Páginas públicas que sí se guardan para verlas sin conexión
-const PUBLIC_PAGES = ['/', '/carrito', '/citas']
-const PUBLIC_PREFIXES = ['/categoria/', '/producto/']
+const PUBLIC_PAGES = ['/', '/carrito', '/citas', '/en', '/en/cart']
+const PUBLIC_PREFIXES = ['/categoria/', '/producto/', '/en/category/', '/en/product/']
 
 // HTML del shell: se guarda al instalar para que la tienda abra aunque sea la primera vez sin red
 const SHELL_PAGES = PUBLIC_PAGES

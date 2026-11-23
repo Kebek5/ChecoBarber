@@ -48,7 +48,7 @@ export default function NewProductToast({ wsUrl, admin = false }: Props) {
    if (items.length === 0) return null
 
    return (
-      <div className="fixed right-4 bottom-4 z-50 flex w-72 flex-col gap-2" aria-live="polite">
+      <div className="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[max(1rem,env(safe-area-inset-bottom))] z-50 flex w-72 flex-col gap-2" aria-live="polite">
          {items.map((product) => (
             <div key={product.id} className="border bg-background p-3 text-xs shadow-md">
                <div className="flex items-start justify-between gap-2">

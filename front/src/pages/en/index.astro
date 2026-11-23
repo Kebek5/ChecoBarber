@@ -1,0 +1,41 @@
+---
+import type { Category } from '@/domain/catalog/Category'
+import type { Product } from '@/domain/catalog/Product'
+import { getCategories, listProducts } from '@/infrastructure/container'
+import { getLang, t } from '@/i18n/ui'
+import Shop from '@/presentation/components/customer/Shop.astro'
+import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
+
+const lang = getLang(Astro.currentLocale)
+
+// Búsqueda del header: /?q=cera
+const search = (Astro.url.searchParams.get('q') ?? '').trim()
+const term = search.toLowerCase()
+
+let categories: Category[] = []
+let products: Product[] = []
+let error = ''
+
+try {
+   const [categoriesData, productsData] = await Promise.all([
+      getCategories.execute(),
+      listProducts.execute(),
+   ])
+   categories = categoriesData
+
+   if (term) {
+      products = productsData.filter((product) =>
+         product.name.toLowerCase().includes(term) || (product.description && product.description.toLowerCase().includes(term)))
+   } else {
+      products = productsData
+   }
+   } catch (err) {
+   error = err instanceof Error ? err.message : t(lang, 'shopError')
+}
+---
+
+<BaseLayout title={t(lang, 'homeTitle')} description={t(lang, 'homeDescription')}>
+   <div id="products">
+      <Shop categories={categories} products={products} search={search} error={error} />
+   </div>
+</BaseLayout>

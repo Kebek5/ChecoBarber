@@ -1,66 +1,384 @@
 ---
-import { MagnifyingGlassIcon, ShoppingCartIcon, SignOutIcon } from '@phosphor-icons/react/dist/ssr'
+import {
+  MagnifyingGlassIcon,
+  ShoppingCartIcon,
+  SignOutIcon,
+  ListIcon,
+  XIcon,
+  CalendarBlankIcon,
+  PackageIcon,
+  UserIcon
+} from '@phosphor-icons/react/dist/ssr'
+
 import CartBadge from '@/presentation/components/customer/CartBadge'
+import LanguageSwitcher from '@/presentation/components/layout/LanguageSwitcher.astro'
 import { buttonVariants } from '@/presentation/components/ui/button'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/presentation/components/ui/input-group'
-import { ClientRouter } from 'astro:transitions' // 1. Importamos el enrutador de Astro
+import { localizeHref } from '@/i18n/routes'
+import { getLang, t } from '@/i18n/ui'
+import { ClientRouter } from 'astro:transitions'
 
 const user = Astro.locals.user
 const q = Astro.url.searchParams.get('q') ?? ''
+const lang = getLang(Astro.currentLocale)
+const href = (path: string) => localizeHref(path, lang)
 ---
 
 <ClientRouter />
 
-<header class="sticky top-0 z-50 flex min-h-22.5 flex-wrap items-center gap-x-6 gap-y-3 border-b bg-background px-4 py-3 md:px-8">
-  <a href="/" class="h-16 w-25 shrink-0">
-    <img src="/logo-sm.webp" alt="ChecoBarber" width="100" height="64" decoding="async" class="size-full object-contain object-center" />
+<header class="sticky top-0 z-50 flex min-h-22.5 items-center gap-3 border-b bg-background pt-[calc(0.75rem_+_env(safe-area-inset-top,0px))] pr-[max(1rem,env(safe-area-inset-right))] pb-3 pl-[max(1rem,env(safe-area-inset-left))] md:gap-6 md:pr-[max(2rem,env(safe-area-inset-right))] md:pl-[max(2rem,env(safe-area-inset-left))]">
+
+  <!-- Logo -->
+  <a href={href('/')} class="h-16 w-20 shrink-0 md:w-25">
+    <img
+      src="/logo-sm.webp"
+      alt={t(lang, 'logoAlt')}
+      width="100"
+      height="64"
+      decoding="async"
+      class="size-full object-contain object-center"
+    />
   </a>
 
-  <!-- 3. Le agregamos un ID al formulario y quitamos el botón de submit manual -->
-  <form id="search-form" action="/" method="get" role="search" class="order-last w-full sm:order-0 sm:w-auto sm:max-w-150 sm:flex-1">
+  <!-- Buscador -->
+  <form
+    id="search-form"
+    action={href('/')}
+    method="get"
+    role="search"
+    class="min-w-0 flex-1 md:max-w-150"
+  >
     <InputGroup className="h-10 rounded-full">
       <InputGroupAddon>
         <MagnifyingGlassIcon />
       </InputGroupAddon>
-      <!-- 4. Agregamos data-astro-reload para evitar comportamientos extraños y un ID -->
-      <InputGroupInput 
+      <InputGroupInput
         id="search-input"
-        name="q" 
-        type="search" 
-        defaultValue={q} 
-        placeholder="Busca cera, cortes..." 
-        aria-label="Buscar productos"
+        name="q"
+        type="search"
+        defaultValue={q}
+        placeholder={t(lang, 'searchPlaceholder')}
+        aria-label={t(lang, 'searchLabel')}
         autoComplete="off"
       />
     </InputGroup>
   </form>
 
-  <nav class="ml-auto flex items-center gap-3">
-      <a href="/citas" class={buttonVariants({ variant: 'ghost', size: 'lg' })}>Agendar cita</a>
-    {user && <a href="/mis-compras" class={buttonVariants({ variant: 'ghost', size: 'lg' })}>Mis compras</a>}
-    <CartBadge client:only="react">
-      <a slot="fallback" href="/carrito" class={buttonVariants({ variant: 'outline', size: 'lg' })}>
+  <!-- Navegación escritorio -->
+  <nav class="ml-auto hidden min-w-0 flex-wrap items-center justify-end gap-2 md:flex md:gap-3">
+
+    <a href={href('/citas')} class={buttonVariants({ variant: 'ghost', size: 'lg' })}>
+      {t(lang, 'navBook')}
+    </a>
+
+    {user && (
+      <a href={href('/mis-compras')} class={buttonVariants({ variant: 'ghost', size: 'lg' })}>
+        {t(lang, 'navMyOrders')}
+      </a>
+    )}
+
+    <CartBadge client:only="react" lang={lang}>
+      <a slot="fallback" href={href('/carrito')} class={buttonVariants({ variant: 'outline', size: 'lg' })}>
         <ShoppingCartIcon weight="bold" />
-        <span class="hidden sm:inline">Tu carrito</span>
+        <span class="hidden lg:inline">{t(lang, 'navCart')}</span>
       </a>
     </CartBadge>
 
     {user ? (
       <>
-        <span class="hidden text-sm lg:inline">Hola, {user.name}</span>
+        <span class="hidden text-sm lg:inline">
+          {t(lang, 'navHello', { name: user.name })}
+        </span>
+
         <form method="post" action="/salir">
           <button type="submit" class={buttonVariants({ variant: 'outline', size: 'lg' })}>
             <SignOutIcon />
-            <span class="hidden sm:inline">Cerrar sesión</span>
+            <span class="hidden lg:inline">{t(lang, 'navLogout')}</span>
           </button>
         </form>
       </>
     ) : (
       <>
-        <a href="/login" class={buttonVariants({ variant: 'ghost', size: 'lg' })}>Iniciar sesión</a>
-        <a href="/registro" class={buttonVariants({ variant: 'default', size: 'lg' })}>Registrarse</a>
+        <a href={href('/login')} class={buttonVariants({ variant: 'ghost', size: 'lg' })}>
+          {t(lang, 'navLogin')}
+        </a>
+
+        <a href={href('/registro')} class={buttonVariants({ variant: 'default', size: 'lg' })}>
+          {t(lang, 'navRegister')}
+        </a>
       </>
     )}
+
+    <LanguageSwitcher />
+  </nav>
+
+  <!-- Menú hamburguesa: solo móviles -->
+  <div class="relative shrink-0 md:hidden">
+
+    <button
+      id="menu-toggle"
+      type="button"
+      class="flex size-10 items-center justify-center rounded-full border bg-background transition-colors hover:bg-muted"
+      aria-label="Abrir menú"
+      aria-expanded="false"
+      aria-controls="main-menu"
+    >
+      <ListIcon
+        id="menu-open-icon"
+        size={24}
+        weight="bold"
+        className="!block"
+      />
+
+      <XIcon
+        id="menu-close-icon"
+        size={24}
+        weight="bold"
+        className="!hidden"
+      />
+    </button>
+
+    <nav
+      id="main-menu"
+      class="absolute right-0 top-full mt-3 hidden w-64 flex-col gap-1 rounded-xl border bg-background p-3 shadow-xl"
+      aria-label="Menú principal"
+    >
+
+      {user && (
+        <div class="border-b px-3 py-3">
+          <p class="text-sm text-muted-foreground">Hola,</p>
+          <p class="truncate font-semibold">{user.name}</p>
+        </div>
+      )}
+
+      <a href={href('/citas')} class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-muted">
+        <CalendarBlankIcon size={20} />
+        {t(lang, 'navBook')}
+      </a>
+
+      {user && (
+        <a href={href('/mis-compras')} class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-muted">
+          <PackageIcon size={20} />
+          {t(lang, 'navMyOrders')}
+        </a>
+      )}
+
+      <CartBadge client:only="react" lang={lang}>
+        <a slot="fallback" href={href('/carrito')} class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-muted">
+          <ShoppingCartIcon size={20} weight="bold" />
+          {t(lang, 'navCart')}
+        </a>
+      </CartBadge>
+
+      <div class="my-1 border-t"></div>
+
+      {user ? (
+        <form method="post" action="/salir">
+          <button type="submit" class="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm text-destructive hover:bg-muted">
+            <SignOutIcon size={20} />
+            {t(lang, 'navLogout')}
+          </button>
+        </form>
+      ) : (
+        <>
+          <a href={href('/login')} class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-muted">
+            <UserIcon size={20} />
+            {t(lang, 'navLogin')}
+          </a>
+
+          <a href={href('/registro')} class={buttonVariants({ variant: 'default', size: 'lg' })}>
+            {t(lang, 'navRegister')}
+          </a>
+        </>
+      )}
+
+      <div class="my-1 border-t"></div>
+
+      <div class="px-3 py-2">
+        <LanguageSwitcher />
+      </div>
+
+    </nav>
+  </div>
+
+</header>
+
+
+<script>
+  import { navigate } from 'astro:transitions/client';
+
+  function initMenu() {
+    const toggle = document.getElementById('menu-toggle');
+    const menu = document.getElementById('main-menu');
+    const openIcon = document.getElementById('menu-open-icon');
+    const closeIcon = document.getElementById('menu-close-icon');
+
+    if (!toggle || !menu || !openIcon || !closeIcon) return;
+
+    if (toggle.dataset.initialized === 'true') return;
+    toggle.dataset.initialized = 'true';
+
+    function closeMenu() {
+    menu?.classList.add('hidden');
+    toggle?.setAttribute('aria-expanded', 'false');
+    toggle?.setAttribute('aria-label', 'Abrir menú');
+
+    openIcon?.classList.remove('!hidden');
+    openIcon?.classList.add('!block');
+
+    closeIcon?.classList.remove('!block');
+    closeIcon?.classList.add('!hidden');
+  }
+
+    toggle.addEventListener('click', () => {
+      const isOpen = !menu.classList.contains('hidden');
+
+      if (isOpen) {
+        closeMenu();
+      } else {
+        menu.classList.remove('hidden');
+        toggle.setAttribute('aria-expanded', 'true');
+        toggle.setAttribute('aria-label', 'Cerrar menú');
+
+        openIcon.classList.remove('!block');
+        openIcon.classList.add('!hidden');
+
+        closeIcon.classList.remove('!hidden');
+        closeIcon.classList.add('!block');
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      if (
+        !menu.contains(event.target as Node) &&
+        !toggle.contains(event.target as Node)
+      ) {
+        closeMenu();
+      }
+    });
+
+    menu.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', closeMenu);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeMenu();
+    });
+  }
+
+  function initSearch() {
+    const input = document.getElementById('search-input') as HTMLInputElement;
+
+    if (!input) return;
+
+    if (input.dataset.searchInitialized === 'true') return;
+    input.dataset.searchInitialized = 'true';
+
+    let debounceTimer: ReturnType<typeof setTimeout>;
+
+    if (input.value) {
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    }
+
+    input.addEventListener('input', (event) => {
+      const target = event.target as HTMLInputElement;
+
+      clearTimeout(debounceTimer);
+
+      debounceTimer = setTimeout(() => {
+        const value = target.value.trim();
+        const url = new URL(window.location.href);
+
+        if (value === '') {
+          url.searchParams.delete('q');
+        } else {
+          url.searchParams.set('q', value);
+        }
+
+        navigate(url.pathname + url.search, {
+          history: 'replace'
+        });
+      }, 200);
+    });
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    initMenu();
+    initSearch();
+  });
+</script>
+
+
+
+<!-- ---
+import { MagnifyingGlassIcon, ShoppingCartIcon, SignOutIcon } from '@phosphor-icons/react/dist/ssr'
+import CartBadge from '@/presentation/components/customer/CartBadge'
+import LanguageSwitcher from '@/presentation/components/layout/LanguageSwitcher.astro'
+import { buttonVariants } from '@/presentation/components/ui/button'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/presentation/components/ui/input-group'
+import { localizeHref } from '@/i18n/routes'
+import { getLang, t } from '@/i18n/ui'
+import { ClientRouter } from 'astro:transitions'
+
+const user = Astro.locals.user
+const q = Astro.url.searchParams.get('q') ?? ''
+const lang = getLang(Astro.currentLocale)
+const href = (path: string) => localizeHref(path, lang)
+---
+
+<ClientRouter />
+
+<header class="sticky top-0 z-50 flex min-h-22.5 flex-wrap items-center gap-x-4 gap-y-3 border-b bg-background pt-[calc(0.75rem_+_env(safe-area-inset-top,0px))] pr-[max(1rem,env(safe-area-inset-right))] pb-3 pl-[max(1rem,env(safe-area-inset-left))] md:gap-x-6 md:pr-[max(2rem,env(safe-area-inset-right))] md:pl-[max(2rem,env(safe-area-inset-left))]">
+  <a href={href('/')} class="h-16 w-25 shrink-0">
+    <img src="/logo-sm.webp" alt={t(lang, 'logoAlt')} width="100" height="64" decoding="async" class="size-full object-contain object-center" />
+  </a>
+
+  <form id="search-form" action={href('/')} method="get" role="search" class="order-last w-full min-w-0 sm:order-0 sm:w-auto sm:max-w-150 sm:flex-1">
+    <InputGroup className="h-10 rounded-full">
+      <InputGroupAddon>
+        <MagnifyingGlassIcon />
+      </InputGroupAddon>
+      <InputGroupInput
+        id="search-input"
+        name="q"
+        type="search"
+        defaultValue={q}
+        placeholder={t(lang, 'searchPlaceholder')}
+        aria-label={t(lang, 'searchLabel')}
+        autoComplete="off"
+      />
+    </InputGroup>
+  </form>
+
+  <nav class="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2 md:gap-3">
+    <a href="/citas" class={buttonVariants({ variant: 'ghost', size: 'lg' })}>{t(lang, 'navBook')}</a>
+    {user && <a href="/mis-compras" class={buttonVariants({ variant: 'ghost', size: 'lg' })}>{t(lang, 'navMyOrders')}</a>}
+    <CartBadge client:only="react" lang={lang}>
+      <a slot="fallback" href={href('/carrito')} class={buttonVariants({ variant: 'outline', size: 'lg' })}>
+        <ShoppingCartIcon weight="bold" />
+        <span class="hidden sm:inline">{t(lang, 'navCart')}</span>
+      </a>
+    </CartBadge>
+
+    {user ? (
+      <>
+        <span class="hidden text-sm lg:inline">{t(lang, 'navHello', { name: user.name })}</span>
+        <form method="post" action="/salir">
+          <button type="submit" class={buttonVariants({ variant: 'outline', size: 'lg' })}>
+            <SignOutIcon />
+            <span class="hidden sm:inline">{t(lang, 'navLogout')}</span>
+          </button>
+        </form>
+      </>
+    ) : (
+      <>
+        <a href="/login" class={buttonVariants({ variant: 'ghost', size: 'lg' })}>{t(lang, 'navLogin')}</a>
+        <a href="/registro" class={buttonVariants({ variant: 'default', size: 'lg' })}>{t(lang, 'navRegister')}</a>
+      </>
+    )}
+
+    <LanguageSwitcher />
   </nav>
 </header>
 
@@ -107,4 +425,4 @@ const q = Astro.url.searchParams.get('q') ?? ''
   }
 
   document.addEventListener('astro:page-load', initSearch);
-</script>
+</script> -->

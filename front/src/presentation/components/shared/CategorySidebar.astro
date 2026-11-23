@@ -1,5 +1,7 @@
 ---
 import type { Category } from '@/domain/catalog/Category'
+import { localizeHref } from '@/i18n/routes'
+import { getLang, t } from '@/i18n/ui'
 
 interface Props {
   categories: Category[]
@@ -8,22 +10,24 @@ interface Props {
   categoryHref?: (id: string) => string
 }
 
+const lang = getLang(Astro.currentLocale)
+
 const {
   categories,
   activeCategoryId = null,
-  allHref = '/',
-  categoryHref = (id: string) => `/categoria/${id}`,
+  allHref = localizeHref('/', lang),
+  categoryHref = (id: string) => localizeHref(`/categoria/${id}`, lang),
 } = Astro.props
 
 const linkClass = (active: boolean) =>
-  `block w-full rounded-lg px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#dcdcdc] ${active ? 'bg-[#dcdcdc]' : ''}`
+  `block rounded-full border px-3.5 py-2 text-xs font-bold transition-colors hover:bg-[#dcdcdc] md:w-full md:rounded-lg md:border-0 md:px-4 md:py-2.5 md:text-left md:text-sm ${active ? 'bg-[#dcdcdc]' : ''}`
 ---
 
-<aside class="flex w-full shrink-0 flex-col items-start gap-5 px-5 py-7.5 md:w-57.5 md:min-w-65">
-  <h2 class="w-full text-xl font-bold tracking-[2px]">Categorías</h2>
-  <ul class="flex w-full flex-col">
+<aside class="flex w-full shrink-0 flex-col items-start gap-3 px-4 py-4 md:w-57.5 md:min-w-65 md:gap-5 md:px-5 md:py-7.5">
+  <h2 class="w-full text-base font-bold tracking-[2px] md:text-xl">{t(lang, 'categories')}</h2>
+  <ul class="flex w-full flex-wrap gap-2 md:flex-col md:flex-nowrap md:gap-0">
     <li>
-      <a href={allHref} class={linkClass(activeCategoryId === null)}>Todas las categorías</a>
+      <a href={allHref} class={linkClass(activeCategoryId === null)}>{t(lang, 'allCategories')}</a>
     </li>
     {categories.map((category) => (
       <li>

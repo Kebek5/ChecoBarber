@@ -1,0 +1,30 @@
+---
+import { pathFor, switchPath } from '@/i18n/routes'
+import { getLang, languages, t, type Lang } from '@/i18n/ui'
+
+const lang = getLang(Astro.currentLocale)
+const { pathname, search } = Astro.url
+
+const items = (Object.keys(languages) as Lang[]).map((code) => ({
+code,
+label: languages[code],
+// Conserva la búsqueda (?q=) solo si la página existe en ese idioma
+href: switchPath(pathname, code) + (pathFor(pathname, code) !== null ? search : ''),
+current: code === lang,
+}))
+---
+
+<nav aria-label={t(lang, 'language')} class="flex items-center">
+   {items.map((item) => (
+      <a
+         href={item.href}
+         lang={item.code}
+         hreflang={item.code}
+         aria-label={item.label}
+         aria-current={item.current ? 'true' : undefined}
+         class={`inline-flex h-10 min-w-10 items-center justify-center rounded-md px-2 text-sm font-bold transition-colors hover:bg-muted ${item.current ? 'underline underline-offset-4' : 'text-muted-foreground'}`}
+      >
+         {item.code.toUpperCase()}
+      </a>
+   ))}
+</nav>
