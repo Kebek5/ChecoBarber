@@ -4,6 +4,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Puntos de ruptura del proyecto: 360 (xs) · 768 (md) · 1200 (xl) */
+@theme {
+    --breakpoint-xs: 22.5rem;
+    --breakpoint-xl: 75rem;
+}
+
 
 @theme inline {
     --font-heading: var(--font-mono);
@@ -165,5 +171,27 @@ a:focus-visible {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
+    }
+}
+
+/* Sin scroll horizontal: red de seguridad (las causas reales se corrigen en cada componente) */
+html,
+body {
+    max-width: 100%;
+    overflow-x: clip;
+}
+
+/* Texto largo nunca ensancha la página */
+h1,
+h2,
+h3,
+p {
+    overflow-wrap: anywhere;
+}
+
+/* Orientación: en horizontal bajo (teléfono girado) el header deja de ser fijo para no tapar el contenido */
+@media (orientation: landscape) and (max-height: 500px) {
+    header.sticky {
+        position: static;
     }
 }

@@ -3,7 +3,8 @@ import '@/styles/global.css'
 import TopBar from '@/presentation/components/layout/TopBar.astro'
 import Footer from '@/presentation/components/layout/Footer.astro'
 import NewProductToast from '@/presentation/components/shared/NewProductToast.astro'
-import { pwaInfo } from 'virtual:pwa-info'
+import { alternates } from '@/i18n/routes'
+import { getLang, t } from '@/i18n/ui'
 
 interface Props {
   title?: string
@@ -15,12 +16,11 @@ interface Props {
 }
 
 const SITE_NAME = 'ChecoBarber'
-const DEFAULT_DESCRIPTION =
-  'Productos para cabello y barba en ChecoBarber: ceras, aceites y más. Compra en línea y agenda tu cita.'
+const lang = getLang(Astro.currentLocale)
 
 const {
   title = SITE_NAME,
-  description = DEFAULT_DESCRIPTION,
+  description = t(lang, 'siteDescription'),
   image = '/logo.png',
   canonical,
   type = 'website',
@@ -31,27 +31,34 @@ const {
 const base = Astro.site ?? new URL(Astro.url.origin)
 const canonicalUrl = new URL(canonical ?? Astro.url.pathname, base).href
 const imageUrl = new URL(image, base).href
+
+// Versiones del mismo contenido en cada idioma (solo páginas que existen en es y en)
+const versions = alternates(Astro.url.pathname).map((v) => ({ ...v, href: new URL(v.path, base).href }))
+const spanish = versions.find((v) => v.lang === 'es')
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="generator" content={Astro.generator} />
 
     <title>{title}</title>
-    { pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} /> }
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#fde2be" />
-    
+
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalUrl} />
+    {versions.map((v) => <link rel="alternate" hreflang={v.lang} href={v.href} />)}
+    {spanish && <link rel="alternate" hreflang="x-default" href={spanish.href} />}
     {noindex && <meta name="robots" content="noindex, nofollow" />}
 
     <meta property="og:site_name" content={SITE_NAME} />
-    <meta property="og:locale" content="es_MX" />
+    <meta property="og:locale" content={lang === 'en' ? 'en_US' : 'es_MX'} />
+    <meta property="og:locale:alternate" content={lang === 'en' ? 'es_MX' : 'en_US'} />
     <meta property="og:type" content={type} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -61,22 +68,29 @@ const imageUrl = new URL(image, base).href
 
     <slot name="head" />
   </head>
-  <body class="flex min-h-screen flex-col">
+  <body class="flex min-h-dvh flex-col">
     <a
       href="#contenido"
       class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-60 focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-bold focus:underline"
     >
-      Saltar al contenido
+      {t(lang, 'skipToContent')}
     </a>
     <TopBar />
-    <main id="contenido" tabindex="-1" class="flex-1 outline-none">
+    <main
+      id="contenido"
+      tabindex="-1"
+      class="flex-1 pr-[env(safe-area-inset-right,0px)] pl-[env(safe-area-inset-left,0px)] outline-none"
+    >
       <slot />
     </main>
     <Footer />
     <NewProductToast />
 
     <script>
+      import { registerSW } from 'virtual:pwa-register'
       import { initPwaClient } from '@/pwa/client'
+
+      registerSW({ immediate: true })
       initPwaClient()
     </script>
   </body>

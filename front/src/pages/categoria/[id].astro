@@ -1,10 +1,12 @@
 ---
 import type { Category } from '@/domain/catalog/Category'
 import { getCategories, getCategoryById } from '@/infrastructure/container'
+import { getLang, t } from '@/i18n/ui'
 import { truncate } from '@/presentation/components/lib/seo'
 import Shop from '@/presentation/components/customer/Shop.astro'
 import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
 
+const lang = getLang(Astro.currentLocale)
 const { id } = Astro.params
 
 let categories: Category[] = []
@@ -15,16 +17,15 @@ try {
   categories = await getCategories.execute()
   category = await getCategoryById.execute(id ?? '')
 } catch (err) {
-  error = err instanceof Error ? err.message : 'Error de conexión.'
+  error = err instanceof Error ? err.message : t(lang, 'shopError')
 }
 
 if (!error && !category) Astro.response.status = 404
 
-const name = category?.name ?? 'Categoría'
+const name = category?.name ?? t(lang, 'categoryFallback')
 const title = truncate(`${name} | ChecoBarber`, 60)
 const description = truncate(
-  category?.description?.trim() ||
-    `Productos de ${name} en ChecoBarber: cuidado para cabello y barba. Compra en línea.`,
+  category?.description?.trim() || t(lang, 'categoryDescription', { name }),
   160
 )
 ---

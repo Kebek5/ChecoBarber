@@ -3,6 +3,8 @@ import type { Product } from '@/domain/catalog/Product'
 import { buttonVariants } from '@/presentation/components/ui/button'
 import AddToCartButton from '@/presentation/components/customer/AddToCartButton'
 import { resizeImage } from '@/presentation/components/lib/image'
+import { localizeHref } from '@/i18n/routes'
+import { getLang, t } from '@/i18n/ui'
 
 interface Props {
     product: Product
@@ -11,20 +13,22 @@ interface Props {
     showAddToCart?: boolean
 }
 
+const lang = getLang(Astro.currentLocale)
+
 const {
     product,
-    detailHref = `/producto/${product.id}`,
+    detailHref = localizeHref(`/producto/${product.id}`, lang),
     showAddToCart = true,
-    detailLabel = 'Ver Detalle'
+    detailLabel = t(lang, 'viewDetail')
 } = Astro.props
 ---
 
-<div class="flex w-65 flex-col justify-between border p-4">
+<div class="flex w-full min-w-0 flex-col justify-between border p-4">
 
     <div>
 
         <div class="relative mb-2.5 flex h-35 items-center justify-center bg-muted">
-            <span class="text-xs text-muted-foreground" aria-hidden="true">🖼️ Sin Imagen</span>
+            <span class="text-xs text-muted-foreground" aria-hidden="true">🖼️ {t(lang, 'noImage')}</span>
 
             {product.img && (
                 <img
@@ -51,6 +55,7 @@ const {
         {showAddToCart && (
             <AddToCartButton
                 client:visible
+                label={t(lang, 'add')}
                 product={{
                     id: product.id,
                     name: product.name,

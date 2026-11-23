@@ -1,8 +1,12 @@
 ---
 import { FacebookLogoIcon, GithubLogoIcon, InstagramLogoIcon, LinkedinLogoIcon } from '@phosphor-icons/react/dist/ssr'
 import { Separator } from '@/presentation/components/ui/separator'
+import { localizeHref } from '@/i18n/routes'
+import { getLang, t } from '@/i18n/ui'
 
 const user = Astro.locals.user
+const lang = getLang(Astro.currentLocale)
+const href = (path: string) => localizeHref(path, lang)
 
 const socials = [
   { label: 'Instagram', href: '#', Icon: InstagramLogoIcon },
@@ -12,22 +16,22 @@ const socials = [
 ]
 
 const sitemap = [
-  { label: 'Tienda', href: '/' },
-    { label: 'Agendar cita', href: '/citas' },
-  { label: 'Carrito', href: '/carrito' },
+  { label: t(lang, 'footerShop'), href: href('/') },
+  { label: t(lang, 'navBook'), href: '/citas' },
+  { label: t(lang, 'footerCart'), href: href('/carrito') },
   ...(user
     ? []
     : [
-        { label: 'Iniciar sesión', href: '/login' },
-        { label: 'Registrarse', href: '/registro' },
+        { label: t(lang, 'navLogin'), href: '/login' },
+        { label: t(lang, 'navRegister'), href: '/registro' },
       ]),
 ]
 ---
 
-<footer id="contacto" class="w-full bg-footer px-6 py-12 text-footer-foreground md:px-12">
+<footer id="contacto" class="w-full bg-footer pt-12 pr-[max(1.5rem,env(safe-area-inset-right))] pb-[calc(3rem_+_env(safe-area-inset-bottom,0px))] pl-[max(1.5rem,env(safe-area-inset-left))] text-footer-foreground md:pr-[max(3rem,env(safe-area-inset-right))] md:pl-[max(3rem,env(safe-area-inset-left))]">
   <div class="mx-auto grid max-w-[1600px] gap-10 md:grid-cols-[2fr_3fr] md:items-start">
     <section class="flex flex-col items-start justify-center gap-2">
-      <img src="/logo-sm.webp" alt="ChecoBarber" width="72" height="72" loading="lazy" decoding="async" class="mb-2 w-18 object-contain" />
+      <img src="/logo-sm.webp" alt={t(lang, 'logoAlt')} width="72" height="72" loading="lazy" decoding="async" class="mb-2 w-18 object-contain" />
       <div class="flex items-center gap-2">
         {socials.map(({ label, href, Icon }) => (
           <a
@@ -41,16 +45,16 @@ const sitemap = [
       </div>
     </section>
 
-    <section class="grid grid-cols-2 gap-8">
-      <div class="flex flex-col items-start gap-2">
-        <h3 class="mb-3 text-xl font-bold">Contacto</h3>
+    <section class="grid grid-cols-1 gap-8 sm:grid-cols-2">
+      <div class="flex min-w-0 flex-col items-start gap-2">
+        <h3 class="mb-3 text-xl font-bold">{t(lang, 'footerContact')}</h3>
         <a href="tel:+523337296008" class="transition-opacity hover:opacity-60">+52 333 729 6008</a>
-        <a href="mailto:a23300700@ceti.mx" class="transition-opacity hover:opacity-60">a23300700@ceti.mx</a>
+        <a href="mailto:a23300700@ceti.mx" class="break-all transition-opacity hover:opacity-60">a23300700@ceti.mx</a>
         <span class="max-w-55 text-pretty">Checo Barber. Haircuts &amp; Shaves. Est. 2025</span>
       </div>
 
-      <div class="flex flex-col items-start">
-        <h3 class="mb-3 text-xl font-bold">Mapa del sitio</h3>
+      <div class="flex min-w-0 flex-col items-start">
+        <h3 class="mb-3 text-xl font-bold">{t(lang, 'footerSitemap')}</h3>
         <ul class="flex flex-col gap-2">
           {sitemap.map((item) => (
             <li>

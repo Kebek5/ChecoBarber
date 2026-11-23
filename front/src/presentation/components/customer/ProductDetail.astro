@@ -6,22 +6,25 @@ import { buttonVariants } from '@/presentation/components/ui/button'
 import { Card } from '@/presentation/components/ui/card'
 import ProductActions from '@/presentation/components/customer/ProductActions'
 import { resizeImage } from '@/presentation/components/lib/image'
+import { localizeHref } from '@/i18n/routes'
+import { getLang, t } from '@/i18n/ui'
 
 interface Props {
    product: Product
 }
 
 const { product } = Astro.props
+const lang = getLang(Astro.currentLocale)
 ---
 
-<div class="mx-auto w-full max-w-300 px-7.5 pt-10 pb-17.5">
-   <a href="/" class={buttonVariants({ variant: 'outline', size: 'lg', className: 'mb-6' })}>
-      <ArrowLeftIcon /> Volver al catálogo
+<div class="mx-auto w-full max-w-300 px-4 pt-6 pb-10 md:px-7.5 md:pt-10 md:pb-17.5">
+   <a href={localizeHref('/', lang)} class={buttonVariants({ variant: 'outline', size: 'lg', className: 'mb-6' })}>
+      <ArrowLeftIcon /> {t(lang, 'backToCatalog')}
    </a>
 
-   <Card className="grid gap-12.5 p-7.5 shadow-[0_0_25px_#2222] md:grid-cols-2">
+   <Card className="grid gap-6 p-4 shadow-[0_0_25px_#2222] md:grid-cols-2 md:gap-12.5 md:p-7.5">
       <div class="relative flex min-h-80 items-center justify-center overflow-hidden rounded-xl bg-[#f8f8f8] md:min-h-112.5">
-         <span class="text-muted-foreground" aria-hidden="true">🖼️ Sin imagen</span>
+         <span class="text-muted-foreground" aria-hidden="true">🖼️ {t(lang, 'noImage')}</span>
          {product.img && (
             <img
                src={resizeImage(product.img, 900)}
@@ -36,17 +39,15 @@ const { product } = Astro.props
          )}
       </div>
 
-      <div class="flex flex-col items-start justify-center">
+      <div class="flex min-w-0 flex-col items-start justify-center">
          {product.category && (
          <Badge variant="outline" className="mb-4 px-3 py-1 text-xs font-bold">{product.category.name}</Badge>
          )}
-         <h1 class="mb-4.5 text-[clamp(32px,5vw,54px)] leading-tight font-bold">{product.name}</h1>
+         <h1 class="mb-4.5 text-[clamp(28px,5vw,54px)] leading-tight font-bold break-words">{product.name}</h1>
          <p class="mb-6 max-w-125 text-base leading-relaxed text-muted-foreground">{product.description}</p>
          <p class="mb-2.5 text-[28px] font-bold tracking-[2px]">${product.price.toFixed(2)}</p>
-         
-         {/* Reemplazamos todo el bloque antiguo por el componente reactivo */}
-         <ProductActions client:idle product={product} />
 
+         <ProductActions client:idle product={product} lang={lang} />
       </div>
    </Card>
 </div>
