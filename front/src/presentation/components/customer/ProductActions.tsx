@@ -2,16 +2,16 @@ import { useState } from 'react'
 import { ShoppingCartIcon } from '@phosphor-icons/react'
 import type { Product } from '@/domain/catalog/Product'
 import { addItemToCart } from '@/infrastructure/cart/zustandCartStore'
-import { localizeHref } from '@/i18n/routes'
 import { t, type Lang } from '@/i18n/ui'
 import { Button, buttonVariants } from '@/presentation/components/ui/button'
 
 interface ProductActionsProps {
    product: Product
    lang?: Lang
+   cartHref?: string
 }
 
-export default function ProductActions({ product, lang = 'es' }: ProductActionsProps) {
+export default function ProductActions({ product, lang = 'es', cartHref = '/carrito' }: ProductActionsProps) {
    // Estado del stock local, inicializado con el valor del servidor
    const [currentStock, setCurrentStock] = useState(product.stock)
    const inStock = currentStock > 0
@@ -41,7 +41,7 @@ export default function ProductActions({ product, lang = 'es' }: ProductActionsP
                {t(lang, 'addToCart')}
             </Button>
 
-            <a href={localizeHref('/carrito', lang)} className={buttonVariants({ variant: 'outline', size: 'lg' })}>
+            <a href={cartHref} className={buttonVariants({ variant: 'outline', size: 'lg' })}>
                <ShoppingCartIcon /> {t(lang, 'goToCart')}
             </a>
          </div>

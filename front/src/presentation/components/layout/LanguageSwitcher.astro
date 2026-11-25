@@ -1,16 +1,17 @@
 ---
-import { pathFor, switchPath } from '@/i18n/routes'
+import { pathFor } from '@/i18n/routes'
 import { getLang, languages, t, type Lang } from '@/i18n/ui'
 
 const lang = getLang(Astro.currentLocale)
-const { pathname, search } = Astro.url
+// originPathname = la URL que pidió el usuario (Astro.url ya apunta a la página reescrita por el fallback)
+const { originPathname } = Astro
+const { search } = Astro.url
 
 const items = (Object.keys(languages) as Lang[]).map((code) => ({
-code,
-label: languages[code],
-// Conserva la búsqueda (?q=) solo si la página existe en ese idioma
-href: switchPath(pathname, code) + (pathFor(pathname, code) !== null ? search : ''),
-current: code === lang,
+   code,
+   label: languages[code],
+   href: pathFor(originPathname, code) + search,
+   current: code === lang,
 }))
 ---
 

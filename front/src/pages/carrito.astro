@@ -1,11 +1,12 @@
 ---
 import CartView from '@/presentation/components/customer/CartView'
 import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
+import { localizeHref } from '@/i18n/routes'
 import { getLang, t } from '@/i18n/ui'
 
 const lang = getLang(Astro.currentLocale)
 ---
 
 <BaseLayout title={t(lang, 'cartTitleSeo')} noindex>
-  <CartView client:only="react" lang={lang} />
+  <CartView client:only="react" lang={lang} homeHref={localizeHref('/', lang)} />
 </BaseLayout>

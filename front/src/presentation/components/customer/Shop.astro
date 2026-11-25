@@ -6,6 +6,7 @@ import Hero from '@/presentation/components/layout/Hero.astro'
 import CategorySidebar from '../shared/CategorySidebar.astro'
 import MiniCart from '@/presentation/components/customer/MiniCart'
 import ProductCard from '../shared/ProductCard.astro'
+import { localizeHref } from '@/i18n/routes'
 
 interface Props {
   categories: Category[]
@@ -59,7 +60,7 @@ const Title = isHome ? 'h2' : 'h1'
       </section>
 
       <div class="hidden self-stretch xl:block">
-        <MiniCart client:only="react" lang={lang} />
+        <MiniCart client:only="react" lang={lang} cartHref={localizeHref('/carrito', lang)} />
       </div>
     </div>
   </>

@@ -170,3 +170,10 @@ export function t(lang: Lang, key: UiKey, vars: Record<string, string | number> 
    }
    return text
 }
+
+/** Quita el prefijo de idioma: /en/producto/1 → /producto/1 · /en → / */
+export function stripLocale(pathname: string): string {
+   const [, first, ...rest] = pathname.split('/')
+   if (first && first !== defaultLang && Object.hasOwn(languages, first)) return '/' + rest.join('/')
+   return pathname
+}

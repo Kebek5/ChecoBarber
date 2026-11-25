@@ -5,11 +5,11 @@ import { t, type Lang } from '@/i18n/ui'
 import { Badge } from '@/presentation/components/ui/badge'
 import { buttonVariants } from '@/presentation/components/ui/button'
 
-export default function CartBadge({ lang = 'es' }: { lang?: Lang }) {
+export default function CartBadge({ lang = 'es', cartHref = '/carrito' }: { lang?: Lang; cartHref?: string }) {
   const totalItems = useCartStore((state) => state.getTotalItems())
 
   return (
-    <a href={localizeHref('/carrito', lang)} className={buttonVariants({ variant: 'outline', size: 'lg' })}>
+    <a href={cartHref} className={buttonVariants({ variant: 'outline', size: 'lg' })}>
       <ShoppingCartIcon weight="bold" aria-hidden="true" />
       <span className="hidden sm:inline">{t(lang, 'navCart')}</span>
       <Badge variant="secondary" className="ml-1 rounded-full px-1.5" aria-hidden="true">

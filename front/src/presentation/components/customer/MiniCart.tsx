@@ -1,5 +1,4 @@
 import { useCartStore } from '@/infrastructure/cart/zustandCartStore'
-import { localizeHref } from '@/i18n/routes'
 import { t, type Lang } from '@/i18n/ui'
 import { Badge } from '@/presentation/components/ui/badge'
 import { buttonVariants } from '@/presentation/components/ui/button'
@@ -7,7 +6,7 @@ import { Card } from '@/presentation/components/ui/card'
 import { Separator } from '@/presentation/components/ui/separator'
 
 // Resumen lateral del carrito (solo se muestra desde 1200 px)
-export default function MiniCart({ lang = 'es' }: { lang?: Lang }) {
+export default function MiniCart({ lang = 'es', cartHref = '/carrito' }: { lang?: Lang; cartHref?: string }) {
    const items = useCartStore((state) => state.items)
    const totalPrice = useCartStore((state) => state.getTotalPrice())
    const totalItems = useCartStore((state) => state.getTotalItems())
@@ -47,7 +46,7 @@ export default function MiniCart({ lang = 'es' }: { lang?: Lang }) {
             <span>{t(lang, 'total')}</span>
             <strong className="text-lg">${totalPrice.toFixed(2)}</strong>
          </div>
-         <a href={localizeHref('/carrito', lang)} className={buttonVariants({ variant: 'outline', size: 'lg', className: 'w-full' })}>
+         <a href={cartHref} className={buttonVariants({ variant: 'outline', size: 'lg', className: 'w-full' })}>
             {t(lang, 'viewCart')}
          </a>
       </Card>
