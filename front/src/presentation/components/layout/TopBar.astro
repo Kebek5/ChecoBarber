@@ -67,17 +67,11 @@ const href = (path: string) => localizeHref(path, lang)
   <!-- Navegación escritorio -->
   <nav class="ml-auto hidden min-w-0 flex-wrap items-center justify-end gap-2 md:flex md:gap-3">
 
-    <a href={href('/citas')} class={buttonVariants({ variant: 'ghost', size: 'lg' })}>
-      {t(lang, 'navBook')}
-    </a>
-
-    {user && (
-      <a href={href('/mis-compras')} class={buttonVariants({ variant: 'ghost', size: 'lg' })}>
-        {t(lang, 'navMyOrders')}
-      </a>
-    )}
-
-    <CartBadge client:only="react" lang={lang}>
+    <a href={href('/citas')} class={buttonVariants({ variant: 'ghost', size: 'lg' })}>{t(lang, 'navBook')}</a>
+    
+    {user && <a href={href('/mis-compras')} class={buttonVariants({ variant: 'ghost', size: 'lg' })}>{t(lang, 'navMyOrders')}</a>}
+    
+    <CartBadge client:only="react" lang={lang} cartHref={href('/carrito')}>
       <a slot="fallback" href={href('/carrito')} class={buttonVariants({ variant: 'outline', size: 'lg' })}>
         <ShoppingCartIcon weight="bold" />
         <span class="hidden lg:inline">{t(lang, 'navCart')}</span>
@@ -99,13 +93,9 @@ const href = (path: string) => localizeHref(path, lang)
       </>
     ) : (
       <>
-        <a href={href('/login')} class={buttonVariants({ variant: 'ghost', size: 'lg' })}>
-          {t(lang, 'navLogin')}
-        </a>
+        <a href={href('/login')} class={buttonVariants({ variant: 'ghost', size: 'lg' })}>{t(lang, 'navLogin')}</a>
 
-        <a href={href('/registro')} class={buttonVariants({ variant: 'default', size: 'lg' })}>
-          {t(lang, 'navRegister')}
-        </a>
+        <a href={href('/registro')} class={buttonVariants({ variant: 'default', size: 'lg' })}>{t(lang, 'navRegister')}</a>
       </>
     )}
 

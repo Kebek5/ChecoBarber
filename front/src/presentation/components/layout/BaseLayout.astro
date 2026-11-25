@@ -3,8 +3,8 @@ import '@/styles/global.css'
 import TopBar from '@/presentation/components/layout/TopBar.astro'
 import Footer from '@/presentation/components/layout/Footer.astro'
 import NewProductToast from '@/presentation/components/shared/NewProductToast.astro'
-import { alternates } from '@/i18n/routes'
-import { getLang, t } from '@/i18n/ui'
+import { pathFor } from '@/i18n/routes'
+import { getLang, languages, t, type Lang } from '@/i18n/ui'
 
 interface Props {
   title?: string
@@ -27,13 +27,20 @@ const {
   noindex = false,
 } = Astro.props
 
-// Canonical sin query (/?q=cera → /). Usa `site` de astro.config
+// Con el fallback de i18n, Astro.url apunta a la página en español;
+// originPathname es la URL real (/en/producto/1), la que debe ir en canonical y hreflang
+const pathname = Astro.originPathname
 const base = Astro.site ?? new URL(Astro.url.origin)
-const canonicalUrl = new URL(canonical ?? Astro.url.pathname, base).href
+const canonicalUrl = new URL(canonical ?? pathname, base).href
 const imageUrl = new URL(image, base).href
 
-// Versiones del mismo contenido en cada idioma (solo páginas que existen en es y en)
-const versions = alternates(Astro.url.pathname).map((v) => ({ ...v, href: new URL(v.path, base).href }))
+// Una versión por idioma. Las páginas privadas (noindex) no las declaran
+const versions = noindex
+  ? []
+  : (Object.keys(languages) as Lang[]).map((code) => ({
+      lang: code,
+      href: new URL(pathFor(pathname, code), base).href,
+    }))
 const spanish = versions.find((v) => v.lang === 'es')
 ---
 

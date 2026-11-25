@@ -22,7 +22,7 @@ try {
 if (!error && !product) Astro.response.status = 404
 
 const base = Astro.site ?? new URL(Astro.url.origin)
-const pageUrl = new URL(Astro.url.pathname, base).href
+const pageUrl = new URL(Astro.originPathname, base).href
 const image = product?.img ? new URL(resizeImage(product.img, 1200), base).href : undefined
 
 const title = truncate(`${product?.name ?? t(lang, 'productFallback')} | ChecoBarber`, 60)

@@ -17,13 +17,13 @@ const socials = [
 
 const sitemap = [
   { label: t(lang, 'footerShop'), href: href('/') },
-  { label: t(lang, 'navBook'), href: '/citas' },
+  { label: t(lang, 'navBook'), href: href('/citas') },
   { label: t(lang, 'footerCart'), href: href('/carrito') },
   ...(user
     ? []
     : [
-        { label: t(lang, 'navLogin'), href: '/login' },
-        { label: t(lang, 'navRegister'), href: '/registro' },
+        { label: t(lang, 'navLogin'), href: href('/login') },
+        { label: t(lang, 'navRegister'), href: href('/registro') },
       ]),
 ]
 ---

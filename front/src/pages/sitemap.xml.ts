@@ -17,16 +17,14 @@ export const GET: APIRoute = async ({ site, url }) => {
 
    const urls = paths.flatMap((es) => {
       const en = pathFor(es, 'en')
-      const alternates = en
-         ? `
-    <xhtml:link rel="alternate" hreflang="es" href="${abs(es)}"/>
-    <xhtml:link rel="alternate" hreflang="en" href="${abs(en)}"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="${abs(es)}"/>`
-         : ''
+      const alternates = `
+   <xhtml:link rel="alternate" hreflang="es" href="${abs(es)}"/>
+   <xhtml:link rel="alternate" hreflang="en" href="${abs(en)}"/>
+   <xhtml:link rel="alternate" hreflang="x-default" href="${abs(es)}"/>`
       const entry = (loc: string) => `  <url>
-    <loc>${abs(loc)}</loc>${alternates}
-  </url>`
-      return en ? [entry(es), entry(en)] : [entry(es)]
+   <loc>${abs(loc)}</loc>${alternates}
+   </url>`
+      return [entry(es), entry(en)]
    })
 
    const xml = `<?xml version="1.0" encoding="UTF-8"?>

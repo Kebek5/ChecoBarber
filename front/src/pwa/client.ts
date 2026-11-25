@@ -8,11 +8,11 @@ type SyncRegistration = ServiceWorkerRegistration & {
 
 // `serviceWorker.ready` nunca resuelve si no hay SW registrado (por ejemplo en desarrollo),
 // por eso se limita la espera.
-async function getRegistration(): Promise<SyncRegistration | undefined> {
+async function getRegistration(timeoutMs = 1500): Promise<SyncRegistration | undefined> {
    if (!('serviceWorker' in navigator)) return undefined
    return Promise.race([
       navigator.serviceWorker.ready as Promise<SyncRegistration>,
-      new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), 1500)),
+      new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), timeoutMs)),
    ])
 }
 
@@ -36,6 +36,13 @@ async function flushQueue(): Promise<void> {
    reg?.active?.postMessage({ type: 'FLUSH_OUTBOX' })
 }
 
+/** Pide al SW guardar todas las categorías y productos para verlos sin conexión. */
+async function precacheCatalog(): Promise<void> {
+   // En la primera visita el SW tarda en activarse: se espera más
+   const reg = await getRegistration(15000)
+   reg?.active?.postMessage({ type: 'PRECACHE_CATALOG' })
+}
+
 /** Notificación del sistema mostrada por el Service Worker (si hay permiso). */
 export async function showLocalNotification(
    title: string,
@@ -55,6 +62,19 @@ export async function showLocalNotification(
 */
 export function initPwaClient(): void {
    if (!('serviceWorker' in navigator)) return
-   window.addEventListener('online', flushQueue)
-   if (navigator.onLine) flushQueue()
+
+   window.addEventListener('online', () => {
+      flushQueue()
+      precacheCatalog()
+   })
+
+   if (navigator.onLine) {
+      flushQueue()
+      // Cuando el navegador está libre, para no competir con la carga de la página
+      if ('requestIdleCallback' in window) {
+         window.requestIdleCallback(() => precacheCatalog(), { timeout: 8000 })
+      } else {
+         setTimeout(precacheCatalog, 4000)
+      }
+   }
 }

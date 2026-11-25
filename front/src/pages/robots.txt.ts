@@ -1,21 +1,19 @@
 import type { APIRoute } from 'astro'
 
+const PRIVATE = [
+   '/dashboard', '/carrito', '/checkout', '/pago', '/pedido/',
+   '/login', '/registro', '/mis-compras', '/datos-fiscales',
+]
+
 export const GET: APIRoute = ({ site, url }) => {
    const base = site ?? new URL(url.origin)
+   const rules = [...PRIVATE, ...PRIVATE.map((p) => `/en${p}`)]
 
    const body = `User-agent: *
 Allow: /
-Disallow: /dashboard
 Disallow: /api/
-Disallow: /carrito
-Disallow: /en/cart
-Disallow: /checkout
-Disallow: /pago
-Disallow: /pedido/
-Disallow: /login
-Disallow: /registro
-Disallow: /mis-compras
-Disallow: /datos-fiscales
+Disallow: /offline-urls.json
+${rules.map((p) => `Disallow: ${p}`).join('\n')}
 
 Sitemap: ${new URL('/sitemap.xml', base).href}
 `

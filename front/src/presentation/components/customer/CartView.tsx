@@ -2,7 +2,6 @@ import { MinusIcon } from '@phosphor-icons/react/dist/csr/Minus'
 import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus'
 import { ShoppingCartIcon } from '@phosphor-icons/react/dist/csr/ShoppingCart'
 import { addItemToCart, useCartStore } from '@/infrastructure/cart/zustandCartStore'
-import { localizeHref } from '@/i18n/routes'
 import { t, type Lang } from '@/i18n/ui'
 import { Badge } from '@/presentation/components/ui/badge'
 import { Button, buttonVariants } from '@/presentation/components/ui/button'
@@ -17,13 +16,13 @@ import {
 } from '@/presentation/components/ui/empty'
 import { Separator } from '@/presentation/components/ui/separator'
 
-export default function CartView({ lang = 'es' }: { lang?: Lang }) {
+export default function CartView({ lang = 'es', homeHref = '/' }: { lang?: Lang; homeHref?: string }) {
   const items = useCartStore((state) => state.items)
   const removeFromCart = useCartStore((state) => state.removeFromCart)
   const deleteFromCart = useCartStore((state) => state.deleteFromCart)
   const totalPrice = useCartStore((state) => state.getTotalPrice())
   const totalItems = useCartStore((state) => state.getTotalItems())
-  const home = localizeHref('/', lang)
+  const home = homeHref
 
   return (
     <div className="mx-auto w-full max-w-350 px-4 py-8 md:px-7.5 md:py-12.5">
@@ -76,7 +75,7 @@ export default function CartView({ lang = 'es' }: { lang?: Lang }) {
                 </div>
 
                 <div className="min-w-0">
-                  <h2 className="mb-1.5 text-[17px] font-bold break-words">{item.name}</h2>
+                  <h2 className="mb-1.5 text-[17px] font-bold wrap-break-word">{item.name}</h2>
                   <span className="text-xs text-muted-foreground">
                     ${item.price.toFixed(2)} {t(lang, 'perUnit')}
                   </span>
