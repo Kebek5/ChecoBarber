@@ -4,8 +4,13 @@ import { paymentsApi } from '@/infrastructure/payments/paymentsApi'
 import { Button } from '@/presentation/components/ui/button'
 import FiscalFields from './FiscalFields'
 import { isOfflineError, queueRequest } from '@/pwa/client'
+import { t, type Lang } from '@/i18n/ui'
 
-export default function DatosFiscalesForm() {
+interface Props {
+   lang?: Lang
+}
+
+export default function DatosFiscalesForm({ lang = 'es' }: Props) {
    const [value, setValue] = useState<DatosFiscales>(EMPTY_FISCAL)
    const [loading, setLoading] = useState(true)
    const [busy, setBusy] = useState(false)
@@ -24,31 +29,70 @@ export default function DatosFiscalesForm() {
       setBusy(true)
       setError('')
       setSuccess('')
+
       try {
          await paymentsApi.post('datos-fiscales', value)
-         setSuccess('Datos fiscales guardados. Se usarán en tus próximas facturas.')
+
+         setSuccess(t(lang, 'fiscalSaved'))
       } catch (err) {
          if (isOfflineError(err)) {
-            // Sin red: se guarda en la cola y el Service Worker lo envía cuando vuelva la conexión
+            // Sin red: se guarda en la cola y el Service Worker lo envía
+            // cuando vuelva la conexión.
             await queueRequest('/api/pagos/datos-fiscales', 'POST', value)
-            setSuccess('Sin conexión: guardaremos tus datos automáticamente cuando vuelva la red.')
+
+            setSuccess(t(lang, 'fiscalOffline'))
          } else {
-            setError(err instanceof Error ? err.message : 'No se pudieron guardar.')
+            setError(
+               err instanceof Error
+                  ? err.message
+                  : t(lang, 'fiscalSaveError')
+            )
          }
       } finally {
          setBusy(false)
       }
    }
 
-   if (loading) return <p className="text-xs text-muted-foreground">Cargando…</p>
+   if (loading) {
+      return (
+         <p className="text-xs text-muted-foreground">
+            {t(lang, 'fiscalLoading')}
+         </p>
+      )
+   }
 
    return (
       <div className="flex flex-col gap-4">
-         {error && <div className="border border-destructive/40 bg-destructive/10 p-2.5 text-xs text-destructive" role="alert">{error}</div>}
-         {success && <div className="border border-green-600/40 bg-green-600/10 p-2.5 text-xs text-green-700" role="status">{success}</div>}
-         <FiscalFields value={value} onChange={setValue} />
+         {error && (
+            <div
+               className="border border-destructive/40 bg-destructive/10 p-2.5 text-xs text-destructive"
+               role="alert"
+            >
+               {error}
+            </div>
+         )}
+
+         {success && (
+            <div
+               className="border border-green-600/40 bg-green-600/10 p-2.5 text-xs text-green-700"
+               role="status"
+            >
+               {success}
+            </div>
+         )}
+
+         <FiscalFields
+            value={value}
+            onChange={setValue}
+            lang={lang}
+         />
+
          <div>
-            <Button disabled={busy} onClick={save}>{busy ? 'Guardando…' : 'Guardar datos fiscales'}</Button>
+            <Button disabled={busy} onClick={save}>
+               {busy
+                  ? t(lang, 'fiscalSaving')
+                  : t(lang, 'fiscalSave')}
+            </Button>
          </div>
       </div>
    )

@@ -2,11 +2,19 @@
 import { AppError } from '@/application/errors'
 import { loginUser } from '@/infrastructure/container'
 import { safeRedirectPath, startSession } from '@/infrastructure/auth/session'
+import { translateError } from '@/i18n/errors'
+import { localizeHref } from '@/i18n/routes'
+import { getLang, t } from '@/i18n/ui'
 import { buttonVariants } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
 import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
+import Notice from '@/presentation/components/admin/Notice.astro'
 
-const next = safeRedirectPath(Astro.url.searchParams.get('next'))
+const lang = getLang(Astro.currentLocale)
+
+// Sin "next", se vuelve al inicio del idioma actual (/ o /en)
+const safeNext = safeRedirectPath(Astro.url.searchParams.get('next'))
+const next = safeNext === '/' ? localizeHref('/', lang) : safeNext
 
 // Si ya hay sesión no tiene caso pedir credenciales otra vez
 if (Astro.locals.user) return Astro.redirect(next)
@@ -22,48 +30,42 @@ if (Astro.request.method === 'POST') {
   try {
     const session = await loginUser.execute({ email, password })
     startSession(Astro.cookies, session.token)
-    const role = session.user.role.toLowerCase();
-    if(role !== 'admin')
-      return Astro.redirect(next)
+    const role = session.user.role.toLowerCase()
+    if (role !== 'admin') return Astro.redirect(next)
 
-    return Astro.redirect('/dashboard');
-
+    return Astro.redirect('/dashboard')
   } catch (err) {
     // Solo mostramos mensajes pensados para el usuario; el resto (red, bugs) va genérico
-    error = err instanceof AppError ? err.message : 'No se pudo iniciar sesión. Intenta de nuevo.'
+    error = err instanceof AppError ? translateError(lang, err.message) : t(lang, 'loginErrorGeneric')
   }
 }
 ---
 
-<BaseLayout title="Iniciar sesión | ChecoBarber" noindex>
+<BaseLayout title={t(lang, 'loginTitle')} noindex>
   <div class="mx-auto max-w-md p-5">
-    <h2 class="mb-4 text-base font-bold">Iniciar sesión</h2>
+    <h1 class="mb-4 text-base font-bold">{t(lang, 'loginHeading')}</h1>
 
-    {error && (
-      <div class="mb-4 border border-destructive/40 bg-destructive/10 p-2.5 text-destructive">
-        <strong>Error:</strong> {error}
-      </div>
-    )}
+    <Notice error={error} />
 
     <form method="post" class="flex flex-col gap-4">
       <div class="flex flex-col gap-1">
-        <label for="correo" class="text-xs font-bold">Correo electrónico</label>
-        <Input id="correo" name="correo" type="email" required defaultValue={email} placeholder="correo@ejemplo.com" autoComplete="email" />
+        <label for="correo" class="text-xs font-bold">{t(lang, 'fieldEmail')}</label>
+        <Input id="correo" name="correo" type="email" required defaultValue={email} placeholder={t(lang, 'placeholderEmail')} autoComplete="email" />
       </div>
 
       <div class="flex flex-col gap-1">
-        <label for="contrasena" class="text-xs font-bold">Contraseña</label>
+        <label for="contrasena" class="text-xs font-bold">{t(lang, 'fieldPassword')}</label>
         <Input id="contrasena" name="contrasena" type="password" required autoComplete="current-password" />
       </div>
 
       <button type="submit" class={buttonVariants({ size: 'lg', className: 'mt-2' })}>
-        Entrar
+        {t(lang, 'loginSubmit')}
       </button>
     </form>
 
     <p class="mt-4 text-xs">
-      ¿No tienes cuenta?
-      <a href={`/registro?next=${encodeURIComponent(next)}`} class="font-bold underline">Regístrate</a>
+      {t(lang, 'loginNoAccount')}
+      <a href={`${localizeHref('/registro', lang)}?next=${encodeURIComponent(next)}`} class="font-bold underline">{t(lang, 'loginRegisterLink')}</a>
     </p>
   </div>
 </BaseLayout>

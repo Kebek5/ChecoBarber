@@ -1,16 +1,23 @@
 ---
 import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
 import DatosFiscalesForm from '@/presentation/components/shared/DatosFiscalesForm'
+import { getLang, t } from '@/i18n/ui'
+
+const lang = getLang(Astro.currentLocale)
 ---
 
-<BaseLayout title="Datos fiscales | ChecoBarber" noindex>
+<BaseLayout title={`${t(lang, 'fiscalTitle')} | ChecoBarber`} noindex>
    <div class="mx-auto flex w-full max-w-150 flex-col gap-6 p-6">
       <header>
-         <h1 class="text-2xl font-bold">Datos fiscales</h1>
+         <h1 class="text-2xl font-bold">
+            {t(lang, 'fiscalTitle')}
+         </h1>
+
          <p class="mt-1 text-sm text-muted-foreground">
-            Si los guardas, tus facturas saldrán a tu nombre. Si no, se emiten a Público en general.
+            {t(lang, 'fiscalDescription')}
          </p>
       </header>
-      <DatosFiscalesForm client:only="react" />
+
+      <DatosFiscalesForm client:only="react" lang={lang} />
    </div>
 </BaseLayout>

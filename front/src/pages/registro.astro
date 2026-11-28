@@ -2,11 +2,19 @@
 import { AppError } from '@/application/errors'
 import { registerUser } from '@/infrastructure/container'
 import { safeRedirectPath, startSession } from '@/infrastructure/auth/session'
+import { translateError } from '@/i18n/errors'
+import { localizeHref } from '@/i18n/routes'
+import { getLang, t } from '@/i18n/ui'
 import { buttonVariants } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
 import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
+import Notice from '@/presentation/components/admin/Notice.astro'
 
-const next = safeRedirectPath(Astro.url.searchParams.get('next'))
+const lang = getLang(Astro.currentLocale)
+
+// Sin "next", se vuelve al inicio del idioma actual (/ o /en)
+const safeNext = safeRedirectPath(Astro.url.searchParams.get('next'))
+const next = safeNext === '/' ? localizeHref('/', lang) : safeNext
 
 if (Astro.locals.user) return Astro.redirect(next)
 
@@ -26,77 +34,73 @@ if (Astro.request.method === 'POST') {
   const confirm = String(form.get('confirmar') ?? '')
 
   try {
-    if (password !== confirm) throw new AppError('Las contraseñas no coinciden.')
+    if (password !== confirm) throw new AppError(t(lang, 'passwordsMismatch'))
 
     const session = await registerUser.execute({ name, tel, email, password })
     startSession(Astro.cookies, session.token)
     return Astro.redirect(next)
   } catch (err) {
     // Solo mostramos mensajes pensados para el usuario; el resto (red, bugs) va genérico
-    error = err instanceof AppError ? err.message : 'No se pudo crear la cuenta. Intenta de nuevo.'
+    error = err instanceof AppError ? translateError(lang, err.message) : t(lang, 'registerErrorGeneric')
   }
 }
 ---
 
-<BaseLayout title="Registro | ChecoBarber" noindex>
+<BaseLayout title={t(lang, 'registerTitle')} noindex>
   <div class="mx-auto max-w-md p-5">
-    <h2 class="mb-4 text-base font-bold">Crear cuenta</h2>
+    <h1 class="mb-4 text-base font-bold">{t(lang, 'registerHeading')}</h1>
 
-    {error && (
-      <div class="mb-4 border border-destructive/40 bg-destructive/10 p-2.5 text-destructive">
-        <strong>Error:</strong> {error}
-      </div>
-    )}
+    <Notice error={error} />
 
     <form method="post" class="flex flex-col gap-4">
       <div class="flex flex-col gap-1">
-        <label for="nombre" class="text-xs font-bold">Nombre Completo</label>
-        <Input id="nombre" name="nombre" type="text" required defaultValue={name} placeholder="Juan Pérez" autoComplete="name" />
+        <label for="nombre" class="text-xs font-bold">{t(lang, 'fieldFullName')}</label>
+        <Input id="nombre" name="nombre" type="text" required defaultValue={name} placeholder={t(lang, 'placeholderName')} autoComplete="name" />
       </div>
 
       <div class="flex flex-col gap-1">
-        <label for="telefono" class="text-xs font-bold">Teléfono (10 dígitos)</label>
-        <Input 
-          client:load id="telefono" name="telefono" type="text" inputMode="numeric" 
-          required maxLength={10} defaultValue={tel} placeholder="3312345678" autoComplete="tel" 
+        <label for="telefono" class="text-xs font-bold">{t(lang, 'fieldPhone')}</label>
+        <Input
+          client:load id="telefono" name="telefono" type="text" inputMode="numeric"
+          required maxLength={10} defaultValue={tel} placeholder="3312345678" autoComplete="tel"
           />
       </div>
 
       <div class="flex flex-col gap-1">
-        <label for="correo" class="text-xs font-bold">Correo electrónico</label>
-        <Input id="correo" name="correo" type="email" required defaultValue={email} placeholder="correo@ejemplo.com" autoComplete="email" />
+        <label for="correo" class="text-xs font-bold">{t(lang, 'fieldEmail')}</label>
+        <Input id="correo" name="correo" type="email" required defaultValue={email} placeholder={t(lang, 'placeholderEmail')} autoComplete="email" />
       </div>
 
       <div class="flex flex-col gap-1">
-        <label for="contrasena" class="text-xs font-bold">Contraseña (mínimo 8 caracteres)</label>
+        <label for="contrasena" class="text-xs font-bold">{t(lang, 'fieldPasswordMin')}</label>
         <Input id="contrasena" name="contrasena" type="password" required minLength={8} autoComplete="new-password" />
       </div>
 
       <div class="flex flex-col gap-1">
-        <label for="confirmar" class="text-xs font-bold">Confirmar contraseña</label>
+        <label for="confirmar" class="text-xs font-bold">{t(lang, 'fieldConfirmPassword')}</label>
         <Input id="confirmar" name="confirmar" type="password" required minLength={8} autoComplete="new-password" />
       </div>
 
       <button type="submit" class={buttonVariants({ size: 'lg', className: 'mt-2' })}>
-        Crear cuenta
+        {t(lang, 'registerSubmit')}
       </button>
     </form>
 
     <p class="mt-4 text-xs">
-      ¿Ya tienes cuenta?
-      <a href={`/login?next=${encodeURIComponent(next)}`} class="font-bold underline">Inicia sesión</a>
+      {t(lang, 'registerHaveAccount')}
+      <a href={`${localizeHref('/login', lang)}?next=${encodeURIComponent(next)}`} class="font-bold underline">{t(lang, 'registerLoginLink')}</a>
     </p>
   </div>
 </BaseLayout>
 
 <script>
-  const inputEl = document.getElementById('telefono') as HTMLInputElement;
+  const inputEl = document.getElementById('telefono') as HTMLInputElement
 
   if (inputEl) {
     inputEl.addEventListener('input', (e) => {
-      const target = e.target as HTMLInputElement;
+      const target = e.target as HTMLInputElement
       // Borra cualquier carácter no numérico instantáneamente al escribir o pegar
-      target.value = target.value.replace(/[^0-9]/g, '');
-    });
+      target.value = target.value.replace(/[^0-9]/g, '')
+    })
   }
 </script>

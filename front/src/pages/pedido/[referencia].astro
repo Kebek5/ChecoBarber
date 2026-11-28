@@ -4,30 +4,41 @@ import type { TrackedOrder } from '@/domain/order/Payment'
 import { config } from '@/infrastructure/config'
 import OrderTracking from '@/presentation/components/customer/OrderTracking'
 import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
+import { getLang, t } from '@/i18n/ui'
 
+const lang = getLang(Astro.currentLocale)
 const referencia = Astro.params.referencia ?? ''
+
 if (!/^CB-[0-9a-f]{12}$/.test(referencia)) {
-   return new Response('Pedido no encontrado', { status: 404 })
+   return new Response(t(lang, 'orderNotFound'), { status: 404 })
 }
 
 let order: TrackedOrder | null = null
 let error = ''
 
 try {
-   const response = await fetch(new URL(`/pagos/estado/${referencia}`, config.graphqlUrl), {
-      signal: AbortSignal.timeout(15_000),
-   })
-   if (response.status === 404) return new Response('Pedido no encontrado', { status: 404 })
+   const response = await fetch(
+      new URL(`/pagos/estado/${referencia}`, config.graphqlUrl),
+      { signal: AbortSignal.timeout(15_000) }
+   )
+
+   if (response.status === 404) {
+      return new Response(t(lang, 'orderNotFound'), { status: 404 })
+   }
+
    if (!response.ok) throw new Error()
+
    order = (await response.json()) as TrackedOrder
 } catch {
-   error = 'No se pudo consultar el pedido. Intenta de nuevo en un momento.'
+   error = lang === 'en'
+      ? 'Could not retrieve the order. Please try again in a moment.'
+      : 'No se pudo consultar el pedido. Intenta de nuevo en un momento.'
 }
 
 const user = Astro.locals.user
 ---
 
-<BaseLayout title={`Pedido ${referencia} | ChecoBarber`} noindex>
+<BaseLayout title={`${t(lang, 'purchasesOrder')} ${referencia} | ChecoBarber`} noindex>
    {order ? (
       <OrderTracking
          client:only="react"
@@ -36,10 +47,11 @@ const user = Astro.locals.user
          paypalClientId={PUBLIC_PAYPAL_CLIENT_ID ?? ''}
          mpPublicKey={PUBLIC_MP_PUBLIC_KEY ?? ''}
          userEmail={user?.email ?? ''}
+         lang={lang}
       />
    ) : (
       <div class="p-10 text-center text-destructive">
-         <h3 class="font-bold">Error de conexión</h3>
+         <h3 class="font-bold">{t(lang, 'orderConnectionError')}</h3>
          <p>{error}</p>
       </div>
    )}

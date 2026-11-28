@@ -16,7 +16,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
   let user: User | null = null
   let backendDown = false
 
-  // Segunda pasada: el fallback de i18n reescribió /en/... a /... y la sesión ya se resolvió.
   // Se compara contra undefined (en lugar de usar `in`) para que TypeScript no reduzca `locals` a `never`.
   const alreadyResolved = (context.locals as Partial<App.Locals>).user !== undefined
 

@@ -1,15 +1,18 @@
 ---
+import { getLang, t } from '@/i18n/ui'
+
 interface Props {
    error?: string
    success?: string
 }
 
 const { error = '', success = '' } = Astro.props
+const lang = getLang(Astro.currentLocale)
 ---
 
 {error && (
    <div class="mb-4 border border-destructive/40 bg-destructive/10 p-2.5 text-destructive" role="alert">
-      <strong>Error:</strong> {error}
+      <strong>{t(lang, 'errorLabel')}</strong> {error}
    </div>
 )}
 {success && (

@@ -2,7 +2,6 @@
 import { listMyOrders } from '@/infrastructure/container'
 import {
    PURCHASE_FILTERS,
-   PURCHASE_FILTER_LABEL,
    isPurchaseFilter,
    matchesFilter,
    needsPayment,
@@ -21,7 +20,10 @@ import { toMessage } from '@/presentation/components/lib/adminError'
 import { formatDate, formatPrice } from '@/presentation/components/lib/format'
 import InvoiceActions from '@/presentation/components/shared/InvoiceActions'
 import NotificationButton from '@/presentation/components/shared/NotificationButton'
+import { getLang, t } from '@/i18n/ui'
+import { localizeHref } from '@/i18n/routes'
 
+const lang = getLang(Astro.currentLocale)
 const token = Astro.locals.token!
 
 const rawFilter = Astro.url.searchParams.get('estado') ?? 'ALL'
@@ -29,33 +31,90 @@ const filter = isPurchaseFilter(rawFilter) ? rawFilter : 'ALL'
 
 let orders: MyOrder[] = []
 let error = ''
+
 try {
    orders = await listMyOrders.execute(token)
 } catch (err) {
-   error = toMessage(err, 'No se pudieron cargar tus compras.')
+   error = toMessage(
+      err,
+      t(lang, 'purchasesLoadError')
+   )
 }
 
 const visible = orders.filter((order) => matchesFilter(order, filter))
-const countOf = (f: (typeof PURCHASE_FILTERS)[number]) => orders.filter((order) => matchesFilter(order, f)).length
 
-const methodLabel = (order: MyOrder) =>
-   order.paymentMethod === 'LINK'
-      ? 'Link de pago Mercado Pago'
-      : (PAYMENT_METHODS.find((m) => m.id === order.paymentMethod)?.label ?? order.paymentMethod)
+const countOf = (f: (typeof PURCHASE_FILTERS)[number]) =>
+   orders.filter((order) => matchesFilter(order, f)).length
+
+const methodLabel = (order: MyOrder) => {
+   if (order.paymentMethod === 'LINK') {
+      return t(lang, 'purchasesPaymentLink')
+   }
+
+   const method = PAYMENT_METHODS.find((m) => m.id === order.paymentMethod)
+
+   if (!method) return order.paymentMethod
+
+   const methodKeys: Record<string, string> = {
+      MERCADOPAGO: 'orderMethodMercadoPago',
+      PAYPAL: 'orderMethodPayPal',
+      TERMINAL: 'orderMethodTerminal',
+      CASH: 'orderMethodCash',
+   }
+
+   const key = methodKeys[order.paymentMethod]
+
+   return key
+      ? t(lang, key as any)
+      : method.label
+}
 
 const lineLabel = (order: MyOrder) => {
-   const names = order.lines.map((line) => line.product?.name ?? 'Producto').slice(0, 2)
+   const names = order.lines
+      .map((line) => line.product?.name ?? t(lang, 'purchasesDeletedProduct'))
+      .slice(0, 2)
+
    const extra = order.lines.length - names.length
-   return names.join(', ') + (extra > 0 ? ` y ${extra} más` : '')
+
+   return names.join(', ') +
+      (extra > 0
+         ? ` ${t(lang, 'purchasesAndMore', { n: extra })}`
+         : '')
 }
+
+const filterLabels: Record<string, string> = {
+   ALL: t(lang, 'purchasesFilterAll'),
+   TO_PAY: t(lang, 'purchasesFilterToPay'),
+   PAID: t(lang, 'purchasesFilterPaid'),
+   CANCELLED: t(lang, 'purchasesFilterCancelled'),
+   OTHER: t(lang, 'purchasesFilterOther'),
+}
+
+const purchasesHref = (state: string) =>
+   localizeHref(
+      state === 'ALL' ? '/mis-compras' : `/mis-compras?estado=${state}`,
+      lang
+   )
 ---
 
-<BaseLayout title="Mis compras | ChecoBarber" noindex>
+<BaseLayout title={`${t(lang, 'purchasesTitle')} | ChecoBarber`} noindex>
    <div class="mx-auto flex w-full max-w-300 flex-col gap-8 p-6">
       <header>
-         <h1 class="text-2xl font-bold">Mis compras</h1>
-         <p class="mt-1 text-sm text-muted-foreground">Tus pedidos, su estado de pago y su seguimiento en un solo lugar.</p>
-         <a href="/datos-fiscales" class="mt-2 inline-block text-xs underline">Mis datos fiscales</a>
+         <h1 class="text-2xl font-bold">
+            {t(lang, 'purchasesTitle')}
+         </h1>
+
+         <p class="mt-1 text-sm text-muted-foreground">
+            {t(lang, 'purchasesDescription')}
+         </p>
+
+         <a
+            href={localizeHref('/datos-fiscales', lang)}
+            class="mt-2 inline-block text-xs underline"
+         >
+            {t(lang, 'purchasesFiscalData')}
+         </a>
+
          <NotificationButton client:visible />
       </header>
 
@@ -63,25 +122,44 @@ const lineLabel = (order: MyOrder) => {
 
       {orders.length > 0 && (
          <div class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
-            <StatCard label="Compras" value={orders.length} />
-            <StatCard label="Artículos pedidos" value={orders.reduce((sum, order) => sum + unitsOf(order), 0)} />
-            <StatCard label="Total pagado" value={formatPrice(totalSpent(orders))} />
             <StatCard
-               label="Por pagar"
+               label={t(lang, 'purchasesCount')}
+               value={orders.length}
+            />
+
+            <StatCard
+               label={t(lang, 'purchasesItems')}
+               value={orders.reduce((sum, order) => sum + unitsOf(order), 0)}
+            />
+
+            <StatCard
+               label={t(lang, 'purchasesPaidTotal')}
+               value={formatPrice(totalSpent(orders))}
+            />
+
+            <StatCard
+               label={t(lang, 'purchasesToPay')}
                value={countOf('TO_PAY')}
-               href={countOf('TO_PAY') > 0 ? '/mis-compras?estado=TO_PAY' : undefined}
+               href={countOf('TO_PAY') > 0 ? purchasesHref('TO_PAY') : undefined}
             />
          </div>
       )}
 
-      <nav aria-label="Filtrar compras" class="flex flex-wrap gap-2">
+      <nav
+         aria-label={t(lang, 'purchasesFilter')}
+         class="flex flex-wrap gap-2"
+      >
          {PURCHASE_FILTERS.map((f) => (
             <a
-               href={f === 'ALL' ? '/mis-compras' : `/mis-compras?estado=${f}`}
+               href={purchasesHref(f)}
                aria-current={filter === f ? 'page' : undefined}
-               class={`border px-3 py-1.5 text-xs ${filter === f ? 'bg-foreground font-bold text-background' : 'hover:bg-muted'}`}
+               class={`border px-3 py-1.5 text-xs ${
+                  filter === f
+                     ? 'bg-foreground font-bold text-background'
+                     : 'hover:bg-muted'
+               }`}
             >
-               {PURCHASE_FILTER_LABEL[f]} ({countOf(f)})
+               {filterLabels[f] ?? f} ({countOf(f)})
             </a>
          ))}
       </nav>
@@ -89,9 +167,17 @@ const lineLabel = (order: MyOrder) => {
       {visible.length === 0 ? (
          <div class="flex flex-col items-start gap-3 border p-6">
             <p class="text-sm text-muted-foreground">
-               {orders.length === 0 ? 'Todavía no has hecho ninguna compra.' : 'No tienes compras en esta categoría.'}
+               {orders.length === 0
+                  ? t(lang, 'purchasesEmpty')
+                  : t(lang, 'purchasesNoCategory')}
             </p>
-            <a href="/" class={buttonVariants({ size: 'lg' })}>Ir a la tienda</a>
+
+            <a
+               href={localizeHref('/', lang)}
+               class={buttonVariants({ size: 'lg' })}
+            >
+               {t(lang, 'purchasesGoShop')}
+            </a>
          </div>
       ) : (
          <ul class="flex flex-col gap-4">
@@ -99,15 +185,27 @@ const lineLabel = (order: MyOrder) => {
                <li class="border p-4">
                   <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
                      <div>
-                        <div class="text-sm font-bold">Pedido {order.reference}</div>
+                        <div class="text-sm font-bold">
+                           {t(lang, 'purchasesOrder')} {order.reference}
+                        </div>
+
                         <div class="text-xs text-muted-foreground">
                            {formatDate(order.date)} · {methodLabel(order)} ·{' '}
-                           {order.deliveryType === 'PICKUP' ? 'Recoger en la barbería' : 'Envío a domicilio'}
+                           {order.deliveryType === 'PICKUP'
+                              ? t(lang, 'purchasesPickup')
+                              : t(lang, 'purchasesShipping')}
                         </div>
                      </div>
+
                      <div class="flex items-center gap-2">
-                        <StatusBadge kind="payment" status={order.paymentStatus} />
-                        <span class="text-xs font-bold">{progressLabel(order)}</span>
+                        <StatusBadge
+                           kind="payment"
+                           status={order.paymentStatus}
+                        />
+
+                        <span class="text-xs font-bold">
+                           {progressLabel(order)}
+                        </span>
                      </div>
                   </div>
 
@@ -125,32 +223,76 @@ const lineLabel = (order: MyOrder) => {
                                  />
                               )}
                            </div>
+
                            <div class="min-w-0 flex-1">
-                              <div class="truncate font-medium">{line.product?.name ?? 'Producto eliminado'}</div>
-                              <div class="text-muted-foreground">{line.amount} × {formatPrice(line.unitPrice)}</div>
+                              <div class="truncate font-medium">
+                                 {line.product?.name ??
+                                    t(lang, 'purchasesDeletedProduct')}
+                              </div>
+
+                              <div class="text-muted-foreground">
+                                 {line.amount} × {formatPrice(line.unitPrice)}
+                              </div>
                            </div>
-                           <strong class="whitespace-nowrap">{formatPrice(line.amount * line.unitPrice)}</strong>
+
+                           <strong class="whitespace-nowrap">
+                              {formatPrice(line.amount * line.unitPrice)}
+                           </strong>
                         </li>
                      ))}
                   </ul>
 
                   {order.address && (
-                     <p class="mb-3 text-xs text-muted-foreground">Dirección de entrega: {order.address}</p>
+                     <p class="mb-3 text-xs text-muted-foreground">
+                        {t(lang, 'purchasesAddress')}: {order.address}
+                     </p>
                   )}
 
                   <div class="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
-                     <div class="text-xs text-muted-foreground" title={lineLabel(order)}>
-                        {unitsOf(order)} {unitsOf(order) === 1 ? 'artículo' : 'artículos'} · Total{' '}
-                        <strong class="text-base text-foreground">{formatPrice(order.total)}</strong>
+                     <div
+                        class="text-xs text-muted-foreground"
+                        title={lineLabel(order)}
+                     >
+                        {unitsOf(order)}{' '}
+                        {unitsOf(order) === 1
+                           ? t(lang, 'purchasesItem')
+                           : t(lang, 'purchasesItemsPlural')}{' '}
+                        · {t(lang, 'purchasesTotal')}{' '}
+
+                        <strong class="text-base text-foreground">
+                           {formatPrice(order.total)}
+                        </strong>
                      </div>
+
                      <div class="flex gap-2">
-                        {needsPayment(order) && order.paymentMethod !== 'TERMINAL' && order.paymentMethod !== 'CASH' && order.paymentMethod !== 'LINK' && (
-                           <a href={`/pedido/${order.reference}`} class={buttonVariants({ size: 'lg' })}>Pagar ahora</a>
-                        )}
-                        <a href={`/pedido/${order.reference}`} class={buttonVariants({ variant: 'outline', size: 'lg' })}>
-                           Ver seguimiento
+                        {needsPayment(order) &&
+                           order.paymentMethod !== 'TERMINAL' &&
+                           order.paymentMethod !== 'CASH' &&
+                           order.paymentMethod !== 'LINK' && (
+                              <a
+                                 href={localizeHref(`/pedido/${order.reference}`, lang)}
+                                 class={buttonVariants({ size: 'lg' })}
+                              >
+                                 {t(lang, 'purchasesPayNow')}
+                              </a>
+                           )}
+
+                        <a
+                           href={localizeHref(`/pedido/${order.reference}`, lang)}
+                           class={buttonVariants({
+                              variant: 'outline',
+                              size: 'lg',
+                           })}
+                        >
+                           {t(lang, 'purchasesTracking')}
                         </a>
-                        {order.paymentStatus === 'APPROVED' && <InvoiceActions client:load reference={order.reference} />}
+
+                        {order.paymentStatus === 'APPROVED' && (
+                           <InvoiceActions
+                              client:load
+                              reference={order.reference}
+                           />
+                        )}
                      </div>
                   </div>
                </li>

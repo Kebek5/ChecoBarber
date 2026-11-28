@@ -8,16 +8,28 @@ import { Field, FieldGroup, FieldLabel } from '@/presentation/components/ui/fiel
 import { Input } from '@/presentation/components/ui/input'
 import { Separator } from '@/presentation/components/ui/separator'
 import { Textarea } from '@/presentation/components/ui/textarea'
+import { localizeHref } from '@/i18n/routes'
+import { t, type Lang } from '@/i18n/ui'
+import { translateError } from '@/i18n/errors'
 
 interface CheckoutProps {
   userName: string
   userEmail: string
   userTel: string
+  lang?: Lang
 }
 
-const DELIVERY_OPTIONS: { id: DeliveryType; label: string; description: string }[] = [
-  { id: 'SHIPPING', label: 'Envío a domicilio', description: 'Te lo llevamos a la dirección que indiques.' },
-  { id: 'PICKUP', label: 'Recoger en la barbería', description: 'Pasas por tu pedido; puedes pagar al recoger.' },
+const DELIVERY_OPTIONS: { id: DeliveryType, label: string, description: string }[] = [
+  {
+    id: 'SHIPPING',
+    label: 'checkoutShipping',
+    description: 'checkoutShippingDescription',
+  },
+  {
+    id: 'PICKUP',
+    label: 'checkoutPickup',
+    description: 'checkoutPickupDescription',
+  },
 ]
 
 const optionClass = (selected: boolean, disabled = false) =>
@@ -25,7 +37,7 @@ const optionClass = (selected: boolean, disabled = false) =>
     selected ? 'border-foreground bg-muted/60' : 'hover:bg-muted/40'
   } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`
 
-export default function Checkout({ userName, userEmail, userTel }: CheckoutProps) {
+export default function Checkout({ userName, userEmail, userTel, lang = 'es' }: CheckoutProps) {
   const cart = useCartStore((state) => state.items)
   const clearCart = useCartStore((state) => state.clearCart)
   const totalCart = useCartStore((state) => state.getTotalPrice())
@@ -45,10 +57,22 @@ export default function Checkout({ userName, userEmail, userTel }: CheckoutProps
     }
   }
 
+  const paymentLabel = (id: PaymentMethod) => {
+      const labels: Record<PaymentMethod, string> = {
+        MERCADOPAGO: 'Mercado Pago',
+        LINK: 'Link',
+        PAYPAL: 'PayPal',
+        TERMINAL: 'Terminal',
+        CASH: 'Efectivo',
+      }
+
+      return labels[id] ?? id
+  }
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (cart.length === 0) {
-      setError('Tu carrito está vacío.')
+      setError(t(lang, 'checkoutEmptyCart'))
       return
     }
 
@@ -68,8 +92,17 @@ export default function Checkout({ userName, userEmail, userTel }: CheckoutProps
         }),
       })
       const result = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(result.error || 'Ocurrió un error inesperado al procesar tu pedido.')
-      if (!result.reference) throw new Error('El pedido se creó, pero el servidor no devolvió su referencia.')
+      if (!response.ok) {
+        throw new Error(
+          result.error
+            ? translateError(lang, result.error)
+            : t(lang, 'checkoutUnexpectedError')
+        )
+      }
+
+      if (!result.reference) {
+        throw new Error(t(lang, 'checkoutMissingReference'))
+      }
 
       // El stock ya quedó apartado: se vacía el carrito
       clearCart()
@@ -78,17 +111,21 @@ export default function Checkout({ userName, userEmail, userTel }: CheckoutProps
       // 2. El pago se hace en la página del pedido: Mercado Pago (Checkout API), PayPal, terminal o efectivo
       window.location.href = trackingUrl
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ocurrió un error inesperado al procesar tu pedido.')
-      setIsProcessing(false)
+      setError(
+        err instanceof Error
+          ? translateError(lang, err.message)
+          : t(lang, 'checkoutUnexpectedError')
+      )
     }
+
   }
 
   return (
     <div className="mx-auto w-full max-w-300 px-7.5 py-12.5">
       <div className="mb-9">
-        <Badge variant="outline" className="mb-2.5 uppercase tracking-wider">Último paso</Badge>
+        <Badge variant="outline" className="mb-2.5 uppercase tracking-wider">{t(lang,'checkoutLastStep')}</Badge>
         <h1 className="mb-2 text-[clamp(32px,5vw,52px)] font-bold leading-tight">Checkout</h1>
-        <p className="text-muted-foreground">Confirma tus datos y elige cómo quieres pagar.</p>
+        <p className="text-muted-foreground">{t(lang,'checkoutIntro')}</p>
       </div>
 
       <div className="grid items-start gap-7.5 lg:grid-cols-[1fr_350px]">
@@ -100,26 +137,26 @@ export default function Checkout({ userName, userEmail, userTel }: CheckoutProps
               </p>
             )}
 
-            <h2 className="mb-6 text-xl font-bold">Tus datos</h2>
+            <h2 className="mb-6 text-xl font-bold">{t(lang,'checkoutYourData')}</h2>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="nombre">Nombre completo</FieldLabel>
-                <Input id="nombre" required defaultValue={userName} placeholder="Tu nombre" disabled={isProcessing} />
+                <FieldLabel htmlFor="nombre">{t(lang,'checkoutFullName')}</FieldLabel>
+                <Input id="nombre" required defaultValue={userName} placeholder={t(lang,'checkoutNamePlaceholder')} disabled={isProcessing} />
               </Field>
               <Field>
-                <FieldLabel htmlFor="correo">Correo electrónico</FieldLabel>
+                <FieldLabel htmlFor="correo">C{t(lang,'checkoutEmail')}</FieldLabel>
                 <Input id="correo" type="email" required defaultValue={userEmail} placeholder="correo@ejemplo.com" disabled={isProcessing} />
               </Field>
               <Field>
-                <FieldLabel htmlFor="telefono">Teléfono</FieldLabel>
+                <FieldLabel htmlFor="telefono">{t(lang,'checkoutPhone')}</FieldLabel>
                 <Input id="telefono" type="tel" required defaultValue={userTel} placeholder="3312345678" disabled={isProcessing} />
               </Field>
             </FieldGroup>
 
             <Separator className="my-7" />
 
-            <h2 className="mb-4 text-xl font-bold">Entrega</h2>
-            <div role="radiogroup" aria-label="Tipo de entrega" className="grid gap-3 sm:grid-cols-2">
+            <h2 className="mb-4 text-xl font-bold">{t(lang,'checkoutDelivery')}</h2>
+            <div role="radiogroup" aria-label={t(lang,'checkoutDeliveryType')} className="grid gap-3 sm:grid-cols-2">
               {DELIVERY_OPTIONS.map((option) => (
                 <label key={option.id} className={optionClass(deliveryType === option.id, isProcessing)}>
                   <input
@@ -132,8 +169,8 @@ export default function Checkout({ userName, userEmail, userTel }: CheckoutProps
                     className="mt-1 accent-foreground"
                   />
                   <span>
-                    <span className="block text-sm font-bold">{option.label}</span>
-                    <span className="block text-xs text-muted-foreground">{option.description}</span>
+                    <span className="block text-sm font-bold">{t(lang, option.label as any)}</span>
+                    <span className="block text-xs text-muted-foreground">{t(lang, option.description as any)}</span>
                   </span>
                 </label>
               ))}
@@ -141,13 +178,13 @@ export default function Checkout({ userName, userEmail, userTel }: CheckoutProps
 
             {deliveryType === 'SHIPPING' && (
               <Field className="mt-5">
-                <FieldLabel htmlFor="direccion">Dirección de entrega</FieldLabel>
+                <FieldLabel htmlFor="direccion">{t(lang,'checkoutAddress')}</FieldLabel>
                 <Textarea
                   id="direccion"
                   required
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Calle, número, colonia, ciudad"
+                  placeholder={t(lang,'checkoutAddressPlaceholder')}
                   disabled={isProcessing}
                 />
               </Field>
@@ -155,7 +192,7 @@ export default function Checkout({ userName, userEmail, userTel }: CheckoutProps
 
             <Separator className="my-7" />
 
-            <h2 className="mb-4 text-xl font-bold">Método de pago</h2>
+            <h2 className="mb-4 text-xl font-bold">{t(lang,'checkoutPaymentMethod')}</h2>
             <div role="radiogroup" aria-label="Método de pago" className="flex flex-col gap-3">
               {availableMethods.map((option) => (
                 <label key={option.id} className={optionClass(paymentMethod === option.id, isProcessing)}>
@@ -169,19 +206,29 @@ export default function Checkout({ userName, userEmail, userTel }: CheckoutProps
                     className="mt-1 accent-foreground"
                   />
                   <span>
-                    <span className="block text-sm font-bold">{option.label}</span>
-                    <span className="block text-xs text-muted-foreground">{option.description}</span>
+                    <span className="block text-sm font-bold">
+                      {paymentLabel(option.id)}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      {option.description}
+                    </span>
                   </span>
                 </label>
               ))}
             </div>
 
             <div className="mt-7 flex justify-end gap-2.5">
-              <a href="/carrito" className={buttonVariants({ variant: 'outline', size: 'lg' })}>
-                Volver al carrito
+              <a
+                href={localizeHref('/carrito', lang)}
+                className={buttonVariants({ variant: 'outline', size: 'lg' })}
+              >
+                {t(lang, 'checkoutBackCart')}
               </a>
+
               <Button type="submit" size="lg" disabled={isProcessing || cart.length === 0}>
-                {isProcessing ? 'Procesando...' : 'Continuar al pago'}
+                {isProcessing
+                  ? t(lang, 'checkoutProcessing')
+                  : t(lang, 'checkoutContinue')}
               </Button>
             </div>
           </form>
