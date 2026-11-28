@@ -1,21 +1,24 @@
 ---
+import { getLang, t } from '@/i18n/ui'
+
 interface Props {
    kind: 'order' | 'payment' | 'appointment'
    status: string
 }
 
 const { status } = Astro.props
+const lang = getLang(Astro.currentLocale)
 
 const labels: Record<string, string> = {
-   PENDING: 'Pendiente',
-   IN_PROCESS: 'En proceso',
-   COMPLETED: 'Completado',
-   CANCELLED: 'Cancelado',
-   PAID: 'Pagado',
-   APPROVED: 'Aprobado',
-   REJECTED: 'Rechazado',
-   REFUNDED: 'Reembolsado',
-   CONFIRMED: 'Confirmada',
+   PENDING: t(lang, 'statusPending'),
+   IN_PROCESS: t(lang, 'statusInProcess'),
+   COMPLETED: t(lang, 'statusCompleted'),
+   CANCELLED: t(lang, 'statusCancelled'),
+   PAID: t(lang, 'statusPaid'),
+   APPROVED: t(lang, 'statusApproved'),
+   REJECTED: t(lang, 'statusRejected'),
+   REFUNDED: t(lang, 'statusRefunded'),
+   CONFIRMED: t(lang, 'statusConfirmed'),
 }
 
 const tones: Record<string, string> = {

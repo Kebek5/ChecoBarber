@@ -1,10 +1,18 @@
 ---
 import Checkout from '@/presentation/components/customer/Checkout'
 import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
+import { getLang, t } from '@/i18n/ui'
 
 const user = Astro.locals.user
+const lang = getLang(Astro.currentLocale)
 ---
 
-<BaseLayout title="Checkout | ChecoBarber" noindex>
-  <Checkout client:only="react" userName={user?.name ?? ''} userEmail={user?.email ?? ''} userTel={user?.tel ?? ''} />
+<BaseLayout title={`${t(lang, 'checkoutTitle')} | ChecoBarber`} noindex>
+  <Checkout
+    client:only="react"
+    userName={user?.name ?? ''}
+    userEmail={user?.email ?? ''}
+    userTel={user?.tel ?? ''}
+    lang={lang}
+  />
 </BaseLayout>

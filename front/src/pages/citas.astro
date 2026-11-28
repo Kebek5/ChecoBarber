@@ -1,10 +1,12 @@
 ---
 import { toMessage } from '@/presentation/components/lib/adminError'
 import { bookAppointment, getAvailableHours, listMyAppointments, listServices } from '@/infrastructure/container'
-// import { PUBLIC_SHOP_MAP_QUERY } from 'astro:env/client'
 import { PUBLIC_SHOP_MAP_QUERY } from 'astro:env/client'
 import type { Appointment } from '@/domain/appointment/Appointment'
 import type { Service } from '@/domain/appointment/Service'
+import { translateError } from '@/i18n/errors'
+import { localizeHref } from '@/i18n/routes'
+import { getLang, t } from '@/i18n/ui'
 import BaseLayout from '@/presentation/components/layout/BaseLayout.astro'
 import ShopMap from '@/presentation/components/customer/ShopMap.astro'
 import StatusBadge from '@/presentation/components/admin/StatusBadge.astro'
@@ -14,13 +16,16 @@ import { Input } from '@/presentation/components/ui/input'
 import { formatDate, formatPrice, todayISO } from '@/presentation/components/lib/format'
 import { googleCalendarLink } from '@/presentation/components/lib/calendarLink'
 
+const lang = getLang(Astro.currentLocale)
+const href = (path: string) => localizeHref(path, lang)
+
 const user = Astro.locals.user
 const token = Astro.locals.token
 
 let serviceId = Astro.url.searchParams.get('servicio') ?? ''
 let date = Astro.url.searchParams.get('fecha') ?? ''
 let error = ''
-let success = Astro.url.searchParams.get('ok') ? '¡Cita agendada! Te esperamos.' : ''
+let success = Astro.url.searchParams.get('ok') ? t(lang, 'bookSuccess') : ''
 
 if (Astro.request.method === 'POST') {
    const form = await Astro.request.formData()
@@ -28,13 +33,13 @@ if (Astro.request.method === 'POST') {
    date = String(form.get('fecha') ?? '')
    const hour = String(form.get('hora') ?? '')
 
-   if (!token) return Astro.redirect('/login?next=/citas')
+   if (!token) return Astro.redirect(`${href('/login')}?next=${encodeURIComponent(href('/citas'))}`)
 
    try {
       await bookAppointment.execute(token, { date, hour, serviceId })
-      return Astro.redirect('/citas?ok=1')
+      return Astro.redirect(href('/citas?ok=1'))
    } catch (err) {
-      error = toMessage(err, 'No se pudo agendar la cita.')
+      error = translateError(lang, toMessage(err, t(lang, 'bookErrBook')))
    }
 }
 
@@ -42,7 +47,7 @@ let services: Service[] = []
 try {
    services = await listServices.execute()
 } catch (err) {
-   error = error || toMessage(err, 'No se pudieron cargar los servicios.')
+   error = error || translateError(lang, toMessage(err, t(lang, 'bookErrServices')))
 }
 
 let hours: string[] = []
@@ -51,7 +56,7 @@ if (selected && date) {
    try {
       hours = await getAvailableHours.execute(date, selected.id)
    } catch (err) {
-      error = error || toMessage(err, 'No se pudieron consultar los horarios.')
+      error = error || translateError(lang, toMessage(err, t(lang, 'bookErrHours')))
    }
 }
 
@@ -70,47 +75,47 @@ const today = todayISO()
 const selectClass = 'w-full border bg-transparent px-2.5 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring'
 ---
 
-<BaseLayout title="ChecoBarber | Agenda tu cita">
-   <div class="mx-auto flex w-full max-w-300 flex-col gap-10 p-6">
+<BaseLayout title={t(lang, 'bookTitle')}>
+   <div class="mx-auto flex w-full max-w-300 flex-col gap-10 p-4 md:p-6">
       <header>
-         <h1 class="text-2xl font-bold">Agenda tu cita</h1>
-         <p class="mt-1 text-sm text-muted-foreground">Elige servicio y día; te mostramos solo los horarios libres (lunes a sábado, 10:00 a 19:00).</p>
+         <h1 class="text-2xl font-bold">{t(lang, 'bookHeading')}</h1>
+         <p class="mt-1 text-sm text-muted-foreground">{t(lang, 'bookIntro')}</p>
       </header>
 
       <Notice error={error} success={success} />
 
       <section class="grid gap-8 md:grid-cols-2">
-         <div class="flex flex-col gap-6">
+         <div class="flex min-w-0 flex-col gap-6">
             <!-- Paso 1: servicio y fecha -->
             <form method="get" class="flex flex-col gap-4">
-               <h2 class="text-lg font-bold">1. Servicio y fecha</h2>
+               <h2 class="text-lg font-bold">{t(lang, 'bookStep1')}</h2>
                <div class="flex flex-col gap-1">
-                  <label for="servicio" class="text-xs font-bold">Servicio</label>
+                  <label for="servicio" class="text-xs font-bold">{t(lang, 'bookService')}</label>
                   <select id="servicio" name="servicio" required class={selectClass}>
-                     <option value="" disabled selected={!serviceId}>Elige un servicio</option>
+                     <option value="" disabled selected={!serviceId}>{t(lang, 'bookChooseService')}</option>
                      {services.map((service) => (
                         <option value={service.id} selected={service.id === serviceId}>
-                           {service.name} · {service.duration} · {formatPrice(service.price)}
+                           {service.name} · {service.duration} · {formatPrice(service.price, lang)}
                         </option>
                      ))}
                   </select>
                </div>
                <div class="flex flex-col gap-1">
-                  <label for="fecha" class="text-xs font-bold">Fecha</label>
+                  <label for="fecha" class="text-xs font-bold">{t(lang, 'bookDate')}</label>
                   <Input id="fecha" name="fecha" type="date" min={today} required defaultValue={date} />
                </div>
-               <button type="submit" class={buttonVariants({ variant: 'outline', size: 'lg' })}>Ver horarios</button>
+               <button type="submit" class={buttonVariants({ variant: 'outline', size: 'lg' })}>{t(lang, 'bookSeeHours')}</button>
             </form>
 
             <!-- Paso 2: horario -->
             {selected && date && (
                <form method="post" class="flex flex-col gap-4">
-                  <h2 class="text-lg font-bold">2. Elige tu horario</h2>
+                  <h2 class="text-lg font-bold">{t(lang, 'bookStep2')}</h2>
                   <input type="hidden" name="servicio" value={selected.id} />
                   <input type="hidden" name="fecha" value={date} />
 
                   {hours.length === 0 ? (
-                     <p class="text-xs text-muted-foreground">No hay horarios libres ese día. Prueba con otra fecha.</p>
+                     <p class="text-xs text-muted-foreground">{t(lang, 'bookNoHours')}</p>
                   ) : (
                      <div class="grid grid-cols-3 gap-2 sm:grid-cols-4">
                         {hours.map((hour, index) => (
@@ -125,12 +130,15 @@ const selectClass = 'w-full border bg-transparent px-2.5 py-1.5 text-sm outline-
                   {user ? (
                      hours.length > 0 && (
                         <button type="submit" class={buttonVariants({ size: 'lg' })}>
-                           Confirmar cita · {formatPrice(selected.price)}
+                           {t(lang, 'bookConfirm', { price: formatPrice(selected.price, lang) })}
                         </button>
                      )
                   ) : (
-                     <a href={`/login?next=${encodeURIComponent(`/citas?servicio=${selected.id}&fecha=${date}`)}`} class={buttonVariants({ size: 'lg' })}>
-                        Inicia sesión para confirmar
+                     <a
+                        href={`${href('/login')}?next=${encodeURIComponent(`${href('/citas')}?servicio=${selected.id}&fecha=${date}`)}`}
+                        class={buttonVariants({ size: 'lg' })}
+                     >
+                        {t(lang, 'bookLoginToConfirm')}
                      </a>
                   )}
                </form>
@@ -142,9 +150,9 @@ const selectClass = 'w-full border bg-transparent px-2.5 py-1.5 text-sm outline-
 
       {user && (
          <section class="flex flex-col gap-3">
-            <h2 class="text-lg font-bold">Mis citas</h2>
+            <h2 class="text-lg font-bold">{t(lang, 'bookMine')}</h2>
             {mine.length === 0 ? (
-               <p class="text-xs text-muted-foreground">Todavía no tienes citas.</p>
+               <p class="text-xs text-muted-foreground">{t(lang, 'bookNoneYet')}</p>
             ) : (
                <ul class="flex flex-col gap-2">
                   {mine.map((appointment) => (
@@ -152,15 +160,15 @@ const selectClass = 'w-full border bg-transparent px-2.5 py-1.5 text-sm outline-
                         <div>
                            <div class="font-bold">{appointment.service.name}</div>
                            <div class="text-muted-foreground">
-                              {formatDate(appointment.date)} · {appointment.hour} · {formatPrice(appointment.price)}
+                              {formatDate(appointment.date, lang)} · {appointment.hour} · {formatPrice(appointment.price, lang)}
                            </div>
                         </div>
-                        <div class="flex items-center gap-3">
+                        <div class="flex flex-wrap items-center gap-3">
                            <StatusBadge kind="appointment" status={appointment.status} />
                            {appointment.status === 'PENDING' && (
                               <a
                                  href={googleCalendarLink({
-                                    title: `Cita en ChecoBarber: ${appointment.service.name}`,
+                                    title: t(lang, 'bookCalendarTitle', { service: appointment.service.name }),
                                     date: appointment.date,
                                     hour: appointment.hour,
                                     minutes: parseInt(appointment.service.duration, 10) || 30,
@@ -170,7 +178,7 @@ const selectClass = 'w-full border bg-transparent px-2.5 py-1.5 text-sm outline-
                                  rel="noopener noreferrer"
                                  class="font-bold underline"
                               >
-                                 Agregar a mi Google Calendar
+                                 {t(lang, 'bookAddToCalendar')}
                               </a>
                            )}
                         </div>
